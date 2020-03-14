@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Annihilators in Scala</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Annihilators in Scala</h1>
+        
+            <p><small>July  2, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>In this post I want to explore the design of a type class solving a problem that came up repeatedly in my current project. It’s fairly general, so rather than diving into the details of the project, I’ll start with a few simple examples:</p>
+<ul>
+<li>integer multiplication is <em>annihilated</em> by zero, in that once zero is introduced the result is always zero;</li>
+<li>set intersection is <em>annihilated</em> by the empty set, in that once the empty set is introduced the result is always the empty set; and</li>
+<li>field dereferencing using the “null-safe” <code>?.</code> operator in <a href="http://kotlinlang.org/docs/reference/null-safety.html">Kotlin</a> and <a href="http://coffeescript.org/#operators">Coffeescript</a> is <em>annihilated</em> by <code>null</code>, in that once a <code>null</code> is introduced the result is always <code>null</code>.</li>
+</ul>
+<!--more-->
+<p>You can probably think of your own examples using boolean algebra, or floating point numbers, for example. I use the term <em>annihilated</em> as this is the same concept as an <a href="https://en.wikipedia.org/wiki/Annihilator_(ring_theory)">annihilator from abstract algebra</a>, as I understand it.</p>
+<p>There are two parts to an annihilator:</p>
+<ul>
+<li>there is a binary operation; and</li>
+<li>there is an element that causes annihilation when using that operation.</li>
+</ul>
+<p>From this we can define a type class.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">trait</span> Annihilator[A] {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">def</span> zero: A</a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">def</span> <span class="fu">product</span>(a1: A, a2: A): A</a>
+<a class="sourceLine" id="cb1-4" title="4">}</a></code></pre></div>
+<p>I’ve used the names <code>zero</code> and <code>product</code> by analogy to multiplication, probably the best known instance. As it stands this interface is identical to a monoid, so we’d better add some laws to distinguish the semantics.</p>
+<ul>
+<li><em>Annihilation:</em> <code>product(zero, a) = zero</code> and <code>product(a, zero) = zero</code></li>
+<li><em>Associativity:</em> although not strictly implied by the description above it seems a good idea to mandate that <code>product(product(a, b), c) == product(a, product(b, c))</code></li>
+</ul>
+<p>So far, so simple, but this is not really useful. Let me talk a bit about the example that motivated this blog post to illustrate why.</p>
+<p>In our case we were dealing with various types of intervals. When we take the intersection of two non-overlapping intervals we end up with an empty interval, which annihilates all further intersections. Note that the empty interval has no start or end, unlike all non-empty intervals, so it requires a different representation. An algebraic data type like the below is representative<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Interval[A]</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Nonempty</span>(start: A, end: A) <span class="kw">extends</span> Interval[A]</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Empty[A]() <span class="kw">extends</span> Interval[A]</a></code></pre></div>
+<p>When writing methods on this type the following pattern comes up repeatedly.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Interval[A] {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">def</span> <span class="fu">intersect</span>(that: Interval[A])(<span class="kw">implicit</span> order: Order[A]): Interval[A] =</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">this</span> <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="kw">case</span> <span class="fu">Empty</span>() =&gt; <span class="fu">Empty</span>()</a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="kw">case</span> <span class="fu">Nonempty</span>(s1, e1) =&gt;</a>
+<a class="sourceLine" id="cb3-6" title="6">      that <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="kw">case</span> <span class="fu">Empty</span>() =&gt; <span class="fu">Empty</span>()</a>
+<a class="sourceLine" id="cb3-8" title="8">        <span class="kw">case</span> <span class="fu">Nonempty</span>(s2, e2) =&gt;</a>
+<a class="sourceLine" id="cb3-9" title="9">          <span class="kw">val</span> start = order.<span class="fu">max</span>(s1, s2)</a>
+<a class="sourceLine" id="cb3-10" title="10">          <span class="kw">val</span> end = order.<span class="fu">min</span>(e1, e2)</a>
+<a class="sourceLine" id="cb3-11" title="11">          <span class="fu">Nonempty</span>(start, end)</a>
+<a class="sourceLine" id="cb3-12" title="12">      }</a>
+<a class="sourceLine" id="cb3-13" title="13">    }</a>
+<a class="sourceLine" id="cb3-14" title="14">}</a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Nonempty</span>(start: A, end: A) <span class="kw">extends</span> Interval[A]</a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Empty[A] <span class="kw">extends</span> Interval[A]</a></code></pre></div>
+<p>The repeated nested pattern matching (aka structural recursion) gets fairly tedious, and got me looking for some way to eliminate it.</p>
+<p>The first realisation is a type with an annihilator is isomorphic to an <code>Option</code>. We can divide the domain <code>A</code> into two subsets,</p>
+<ul>
+<li>the zero elements, which we map to <code>None</code>; and</li>
+<li>the non-zero elements, which we map to <code>Some</code>.</li>
+</ul>
+<p>What type should the <code>Some</code> elements contain? Going back to our example we really want an <code>Option[Nonempty]</code>, not an <code>Option[Interval]</code>, or we’ll have to do the pattern matching that we’re trying to avoid. In general this means we must have a type for the non-zero elements, which we <em>refine</em> <code>A</code> to.</p>
+<p>We can express this as</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">trait</span> Annihilator[A, R] {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">def</span> zero: A</a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">def</span> <span class="fu">product</span>(a1: A, a2: A): A</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">def</span> <span class="fu">toOption</span>(a: A): Option[R]</a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">def</span> <span class="fu">fromOption</span>(o: Option[R]): A</a>
+<a class="sourceLine" id="cb4-7" title="7">}</a></code></pre></div>
+<p>where <code>R</code> is our refined type.</p>
+<p>With a suitable definition of <code>Annihilator</code> in scope, and some implicit class syntax, we can write</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Interval[A] {</a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">def</span> <span class="fu">intersect</span>(that: Interval[A])(<span class="kw">implicit</span> order: Order[A]): Interval[A] =</a>
+<a class="sourceLine" id="cb5-3" title="3">    (<span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb5-4" title="4">      i1 &lt;- <span class="kw">this</span>.<span class="fu">toOption</span></a>
+<a class="sourceLine" id="cb5-5" title="5">      i2 &lt;- that.<span class="fu">toOption</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    } <span class="kw">yield</span> {</a>
+<a class="sourceLine" id="cb5-7" title="7">      <span class="kw">val</span> start = order.<span class="fu">max</span>(i1.<span class="fu">start</span>, i2.<span class="fu">start</span>)</a>
+<a class="sourceLine" id="cb5-8" title="8">      <span class="kw">val</span> end = order.<span class="fu">min</span>(i1.<span class="fu">end</span>, i2.<span class="fu">end</span>)</a>
+<a class="sourceLine" id="cb5-9" title="9">      <span class="fu">Nonempty</span>(start, end)</a>
+<a class="sourceLine" id="cb5-10" title="10">    }).<span class="fu">fromOption</span></a>
+<a class="sourceLine" id="cb5-11" title="11">}</a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Nonempty</span>(start: A, end: A) <span class="kw">extends</span> Interval[A]</a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Empty[A]() <span class="kw">extends</span> Interval[A]</a></code></pre></div>
+<p>That’s looking better. In this case we could simplify further by recognising that we only need an applicative, not a monad, but this tweaking is going off the path I want to explore.</p>
+<p>Although this implementation is quite nice, it still feels a bit clunky. We’re doing work to convert our <code>Interval</code> into an <code>Option</code>, only to immediately undo the conversion. It feels like there should be a simpler abstraction that avoids the conversion to <code>Option</code>.</p>
+<p>We can merge the “conversion to <code>Option</code>” step with the “do something with the <code>Option</code>” to give us the following API.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">trait</span> Annihilator[A, R] {</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">def</span> zero: A</a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">def</span> <span class="fu">product</span>(a1: A, a2: A): A</a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">def</span> refine[B](a: A)(then: R =&gt; B)(<span class="kw">else</span>: =&gt; B): B</a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">def</span> <span class="fu">unrefine</span>(in: R): A</a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="kw">def</span> <span class="fu">toOption</span>(a: A): Option[R] =</a>
+<a class="sourceLine" id="cb6-9" title="9">    <span class="fu">refine</span>(a)(r =&gt; Some(r))(None)</a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="kw">def</span> <span class="fu">fromOption</span>(o: Option[R]): A =</a>
+<a class="sourceLine" id="cb6-11" title="11">    o.<span class="fu">fold</span>(zero)(unrefine _) </a>
+<a class="sourceLine" id="cb6-12" title="12">}</a></code></pre></div>
+<p>Now we can write <code>intersect</code> directly in terms of <code>refine</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Interval[A] {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">def</span> <span class="fu">intersect</span>(that: Interval[A])(<span class="kw">implicit</span> order: Order[A]): Interval[A] =</a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">this</span>.<span class="fu">refine</span> { i1 =&gt;</a>
+<a class="sourceLine" id="cb7-4" title="4">      that.<span class="fu">refine</span> { i2 =&gt;</a>
+<a class="sourceLine" id="cb7-5" title="5">        <span class="kw">val</span> start = order.<span class="fu">max</span>(i1.<span class="fu">start</span>, i2.<span class="fu">start</span>)</a>
+<a class="sourceLine" id="cb7-6" title="6">        <span class="kw">val</span> end = order.<span class="fu">min</span>(i1.<span class="fu">end</span>, i2.<span class="fu">end</span>)</a>
+<a class="sourceLine" id="cb7-7" title="7">        <span class="fu">Nonempty</span>(start, end)</a>
+<a class="sourceLine" id="cb7-8" title="8">      }(<span class="fu">Empty</span>())</a>
+<a class="sourceLine" id="cb7-9" title="9">    }(<span class="fu">Empty</span>())</a>
+<a class="sourceLine" id="cb7-10" title="10">}</a>
+<a class="sourceLine" id="cb7-11" title="11"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Nonempty</span>(start: A, end: A) <span class="kw">extends</span> Interval[A]</a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Empty[A]() <span class="kw">extends</span> Interval[A]</a></code></pre></div>
+<p>This feels like the right abstraction to me. We should also consider some laws for these new operations. It seems natural to me that an identity law should hold.</p>
+<p><em>Identity:</em> <code>a == refine(a)(r =&gt; unrefine(r))(a)</code></p>
+<p>We can define some derived operations to make further simplifications, if we so desire.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">trait</span> Annihilator[A, R] {</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">def</span> zero: A</a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">def</span> <span class="fu">product</span>(a1: A, a2: A): A</a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">def</span> refine[B](a: A)(then: R =&gt; B)(<span class="kw">else</span>: =&gt; B): B</a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="kw">def</span> <span class="fu">unrefine</span>(in: R): A</a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="kw">def</span> <span class="fu">and</span>(a1: A, a2: A)(then: (R, R) =&gt; B)(<span class="kw">else</span>: =&gt; B): B =</a>
+<a class="sourceLine" id="cb8-9" title="9">    <span class="fu">refine</span>(a1){ r1 =&gt;</a>
+<a class="sourceLine" id="cb8-10" title="10">      <span class="fu">refine</span>(a2){ r2 =&gt;</a>
+<a class="sourceLine" id="cb8-11" title="11">        <span class="fu">then</span>(r1, r2)</a>
+<a class="sourceLine" id="cb8-12" title="12">      }{</a>
+<a class="sourceLine" id="cb8-13" title="13">        <span class="kw">else</span></a>
+<a class="sourceLine" id="cb8-14" title="14">      }</a>
+<a class="sourceLine" id="cb8-15" title="15">    }{</a>
+<a class="sourceLine" id="cb8-16" title="16">     <span class="kw">else</span></a>
+<a class="sourceLine" id="cb8-17" title="17">    }</a>
+<a class="sourceLine" id="cb8-18" title="18"></a>
+<a class="sourceLine" id="cb8-19" title="19">  <span class="kw">def</span> <span class="fu">toOption</span>(a: A): Option[R] =</a>
+<a class="sourceLine" id="cb8-20" title="20">    <span class="fu">refine</span>(a)(r =&gt; Some(r))(None)</a>
+<a class="sourceLine" id="cb8-21" title="21">  <span class="kw">def</span> <span class="fu">fromOption</span>(o: Option[R]): A =</a>
+<a class="sourceLine" id="cb8-22" title="22">    o.<span class="fu">fold</span>(zero)(unrefine _) </a>
+<a class="sourceLine" id="cb8-23" title="23">}</a></code></pre></div>
+<p>With <code>and</code> we can define a more compact version of <code>intersect</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Interval[A] {</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">def</span> <span class="fu">intersect</span>(that: Interval[A])(<span class="kw">implicit</span> order: Order[A]): Interval[A] =</a>
+<a class="sourceLine" id="cb9-3" title="3">    (<span class="kw">this</span> and that){ (i1, i2) =&gt;</a>
+<a class="sourceLine" id="cb9-4" title="4">      <span class="kw">val</span> start = order.<span class="fu">max</span>(i1.<span class="fu">start</span>, i2.<span class="fu">start</span>)</a>
+<a class="sourceLine" id="cb9-5" title="5">      <span class="kw">val</span> end = order.<span class="fu">min</span>(i1.<span class="fu">end</span>, i2.<span class="fu">end</span>)</a>
+<a class="sourceLine" id="cb9-6" title="6">      <span class="fu">Nonempty</span>(start, end)</a>
+<a class="sourceLine" id="cb9-7" title="7">    }{</a>
+<a class="sourceLine" id="cb9-8" title="8">      <span class="fu">Empty</span>()</a>
+<a class="sourceLine" id="cb9-9" title="9">    }</a>
+<a class="sourceLine" id="cb9-10" title="10">}</a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Nonempty</span>(start: A, end: A) <span class="kw">extends</span> Interval[A]</a>
+<a class="sourceLine" id="cb9-12" title="12"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Empty[A]() <span class="kw">extends</span> Interval[A]</a></code></pre></div>
+<p>The <code>and</code> method is equivalent to a “collapsed” applicative operation in the same way <code>refine</code> is a collapsed monad operation. In fact we can view <code>Annhilator</code> as an <code>Option</code> without the higher-kinded structure, with equivalent monadic and applicative operations that have been “lowered” from <code>F[_]</code> to <code>F</code>. I don’t know of any other work that has studied these objects — if you know of any please mention it in the comments.</p>
+<p>Our structure is closely related to <a href="http://goto.ucsd.edu/~rjhala/liquid/haskell/blog/blog/2013/01/01/refinement-types-101.lhs/">refinement types</a> (at least as I understand them). A refinement type is a type along with a logical predicate that narrows the domain of the type. The <code>refine</code> operation merges the predicate with doing something based on the predicate result. This merging is, I think, necessary to represent the actual type refinement in Scala’s type system. The refinement operations could well be extracted from <code>Annihilator</code> and made into their own separate type class.</p>
+<p>In the current design there is only a single <code>zero</code>. I briefly considered an alternate design that would allow multiple zeros, modelling them as a predicate <code>isZero</code>. This design is closer to refinement types, and is a better fit for, say, IEEE floating point numbers that have multiple representations of NaN, the natural zero on that type. It would be interesting to explore this design further.</p>
+<p>Finally, if you want to explore the design I have made <a href="https://github.com/underscoreio/annihilator">the code</a> available.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I’ve made <code>Interval</code> invariant because, in general, covariance doesn’t play nicely with type classes. This is worth another blog post of its own.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

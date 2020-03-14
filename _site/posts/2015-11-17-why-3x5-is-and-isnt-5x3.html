@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Why 3&times;5 is and isn't 5&times;3</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Why 3&times;5 is and isn't 5&times;3</h1>
+        
+            <p><small>November 17, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>I recently saw this image, taken from a maths test.</p>
+<p><a href="http://i.imgur.com/KtKNmXG.png"> <img src="../images/blog/2015-11-17-3x5.png" width="264" height="334"> </a></p>
+<p>The student has been asked to represent 5×3 in terms of repeated addition. They have written 5+5+5. The teacher has marked this as incorrect and given 3+3+3+3+3 as the correct answer. Like many people, when I first saw this I thought the teacher was clearly wrong. After a bit of thought I realised they were correct, and after still more thought I realised this question raises a whole lot of interesting points.</p>
+<p>So why isn’t 3×5 the same as 5×3?</p>
+<!--more-->
+<p>First we must define what it means for 3×5 to be the same as 5×3. One answer is that we can substitute one expression for another with no observable change. That is, wherever we see 5×3 we can write down 3×5, and vice versa, and there is no change in meaning. This requires us to define what is “observable”, or what an expression “means”. The usual approach is to define meaning as the result that expressions evaluate to. Under this approach the expressions 3×5, 5×3, and 15 are all equivalent because they evaluate to the same value, namely 15. But as programmers we know that this model does not capture all aspects of meaning. For a very concrete example let’s switch to considering sort algorithms.</p>
+<p>You’ve probably studied sort algorithms at some point. There are many sort algorithms that if considered only in terms of their output are all equivalent—they all sort their input! But a basic part of studying them is learning that they are not equivalent along other dimensions. For example, bubble sort has O(n<sup>2</sup>) complexity in the average case, is stable, and can run in-place. Quick sort has average case complexity of O(n log n), is in-place, but is not stable. Merge sort has average case complexity of O(n log n), it is stable, but it is not in-place. These are a just few of the properties we can consider. We could also look at worst-case complexity (quick sort’s is O(n<sup>2</sup>)), ease of parallelisation, locality of reference, and many many more.</p>
+<p>There are two key points we should take from this: there are many different properties we can derive from an algorithm, expression, or other computational object, and if we treat our computational objects as black boxes we cannot derive these properties (except, perhaps, experimentally).</p>
+<p>Let’s return to considering 3×5, 5×3, and 15. They are all equivalent under what we might call the standard interpretation. That is, they all evaluate to the same value. But there are other interpretations where they are not equivalent, such as the number of operations each expression requires. Let’s write some code to illustrate this.</p>
+<p>Our first step is to decide on a representation for expressions. In the exercise the student is asked to represent multiplication as repeated addition, so 3×5 becomes 5+5+5, for example. We are only going to deal with addition and integers, so we can express everything of interest using just lists of integers. For example, 5+5+5 can be represented as <code>List(5,5,5)</code>, and 15 as <code>List(15)</code>.</p>
+<p>With this representation it is clear that 3×5 is not equal to 5×3.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">val</span> threeTimesFive = List(<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">val</span> fiveTimesThree = List(<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">threeTimesFive == fiveTimesThree</a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="co">// res: Boolean = false</span></a></code></pre></div>
+<p>We can evaluate our expressions under the standard interpretation and show they do evaluate to the same value. Therefore substitution is maintained and the two expressions are equivalent <em>under this interpretation</em>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// The short way</span></a>
+<a class="sourceLine" id="cb2-2" title="2">threeTimesFive.<span class="fu">sum</span> == fiveTimesThree.<span class="fu">sum</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// res: Boolean = true</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// The longer, more explicit, way</span></a>
+<a class="sourceLine" id="cb2-6" title="6">threeTimesFive.<span class="fu">foldLeft</span>(<span class="dv">0</span>){ _ + _ } == fiveTimesThree.<span class="fu">foldLeft</span>(<span class="dv">0</span>){ _ + _ }</a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// res: Boolean = true</span></a></code></pre></div>
+<p>Now we can ask other questions, using non-standard interpretations, showing other differences between these expressions. For example, lets ask how many operations each expression requires. It’s simple to write this interpretation using our list representation.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">def</span> <span class="fu">numberOfOperations</span>(expression: List[Int]): Int =</a>
+<a class="sourceLine" id="cb3-2" title="2">  expression.<span class="fu">length</span> - <span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="fu">numberOfOperations</span>(threeTimesFive)</a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="co">// res: Int = 2</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="fu">numberOfOperations</span>(fiveTimesThree)</a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">// res: Int = 4</span></a></code></pre></div>
+<p>Clearly they aren’t equivalent under this interpretation. What else can we do? Well, perhaps when we wrote <code>5+5</code> we actually meant to use <a href="https://en.wikipedia.org/wiki/Tropical_geometry">Tropical numbers</a>. Tropical numbers, and associated tropical geometry, is a fairly new branch of mathematics with connections to optimisation problems. Tropical numbers are defined so <code>+</code> means <code>min</code>. With our list representation it is no problem to implement this alternative interpretation.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">def</span> <span class="fu">tropicalEval</span>(expression: List[Int]): Int =</a>
+<a class="sourceLine" id="cb4-2" title="2">  expression.<span class="fu">foldLeft</span>(expression.<span class="fu">head</span>){ _ min _ }</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="fu">tropicalEval</span>(threeTimesFive)</a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="co">// res: Int = 5</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="fu">tropicalEval</span>(fiveTimesThree)</a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="co">// res: Int = 3</span></a></code></pre></div>
+<p>Once again we’ve seen a non-standard interpretation under which the two expressions are not equivalent.</p>
+<p>Regular readers of this blog will recognise that we’re employing one of our favourite tricks: separating the description of the computation from the process that gives it meaning. (See <a href="%7B%%20post_url%202015-04-14-free-monads-are-simple%20%%7D">here</a> and <a href="%7B%%20post_url%202015-10-14-reification%20%%7D">here</a>, for example.) Our list of integers is the abstract syntax tree (AST), and the different interpretations are interpreters for that AST.</p>
+<p>How did we know we could use a <code>List</code> to represent our AST? We’re implicitly making use of a few facts about addition. First that it is associative, which means that <code>(5 + 5) + 5</code> is the same as <code>5 + (5 + 5)</code>. This means it doesn’t matter where we place the brackets so we can choose one canonical bracketing that corresponds to our list structure. We are also assuming we have an identity element that is equivalent to the empty list. In other words we’re assuming a monoid and using the <a href="%7B%%20post_url%202015-04-23-deriving-the-free-monad%20%%7D">free monoid</a> representation.</p>
+<p>Can we leverage any other properties? Multiplication is also commutative, meaning <code>x*y</code> is equivalent (under the standard interpretation) to <code>y*x</code>. We can use this to transform one list to another with lower runtime cost.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">def</span> <span class="fu">optimise</span>(expression: List[Int]): List[Int] = {</a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">val</span> value = expression.<span class="fu">head</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">val</span> ops = <span class="fu">numberOfOperations</span>(expression)</a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">if</span>(value &lt; ops)</a>
+<a class="sourceLine" id="cb5-5" title="5">    List.<span class="fu">fill</span>(value){ ops + <span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">else</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    expression</a>
+<a class="sourceLine" id="cb5-8" title="8">}</a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="fu">optimise</span>(threeTimesFive)</a>
+<a class="sourceLine" id="cb5-11" title="11"><span class="co">// res: List[Int] = List(5, 5, 5)</span></a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="fu">optimise</span>(fiveTimesThree)</a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="co">// res: List[Int] = List(5, 5, 5)</span></a></code></pre></div>
+<p>This is why we care about laws for our type classes. They tell us what transformations are legal.</p>
+<p>So the teacher is correct. 3×5 is not equal to 5×3, but under the standard interpretation they are equivalent. There is some deep stuff going on here. I’m not equipped to say if this is appropriate to teach children, but if it works it’s awesome stuff. Maths is not about calculating but about manipulating abstract structure, and if the students are being taught that it seems to me to be a good thing. And it’s entirely possible that this example will have given some adults, including me, a deeper appreciation of the depth of structure in simple arithmetic expressions.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

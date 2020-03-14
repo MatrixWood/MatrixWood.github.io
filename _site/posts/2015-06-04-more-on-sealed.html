@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: More on Sealed Traits in Scala</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>More on Sealed Traits in Scala</h1>
+        
+            <p><small>June  4, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>My <a href="%7B%%20post_url%202015-06-02-everything-about-sealed%20%%7D">recent post</a> on sealed traits had some great feedback but it was clear that I glossed over some points too quickly. In this post I want to go over a new trick I’ve learned for sealed traits and clear up some of the points I made in the last post.</p>
+<!--more-->
+<h2 id="the-product-with-serializable-trick">The Product with Serializable Trick</h2>
+<p>If you declare algebraic data types with the pattern I gave in the last post you might see the compiler inferring types that unexpectedly include <code>Product</code> and <code>Serializable</code>. For example if you declare</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Color</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Red <span class="kw">extends</span> Color</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Green <span class="kw">extends</span> Color</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Blue <span class="kw">extends</span> Color</a></code></pre></div>
+<p>when you put elements into a list the compiler will infer the elements have type <code>Product with Serializable with Color</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1">scala&gt; <span class="kw">val</span> colors = List(Red, Green, Blue)</a>
+<a class="sourceLine" id="cb2-2" title="2">colors: List[Product <span class="kw">with</span> Serializable <span class="kw">with</span> Color] = List(Red, Green, Blue)</a></code></pre></div>
+<p>This happens because all case classes automatically extend <code>Product</code> and <code>Serializable</code>. To avoid this ugly type we can make our base type (the sealed trait) extend these two types as well.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Color <span class="kw">extends</span> Product <span class="kw">with</span> Serializable</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Red <span class="kw">extends</span> Color</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Green <span class="kw">extends</span> Color</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Blue <span class="kw">extends</span> Color</a></code></pre></div>
+<p>Now we don’t see <code>Product</code> and <code>Serializable</code> in the inferred type.</p>
+<pre><code>val colors = List(Red, Green, Blue)
+colors: List[Color] = List(Red, Green, Blue)</code></pre>
+<p>Thanks to Julian Truffaut and Channing Walton for pointing this out to me.</p>
+<h2 id="why-you-want-to-use-final">Why You Want to Use Final</h2>
+<p>I suggested you should mark case classes in algebraic data types as <code>final</code>, but didn’t explain very clearly why.</p>
+<p>A final case class cannot be extended by any other class. This means you can make stronger guarantees about how your code behaves. You know that nobody can subclass your class, override some methods, and make something goofy happen. This is great when you are debugging code – you don’t have to go hunting all over the object hierarchy to work out which methods are actually being called.</p>
+<p>Of course making classes final does mean that you lose a form of extensibility. If you do find yourself wanting to allow users to implement functionality you should wrap that functionality up in a trait and use the type class pattern instead.</p>
+<h2 id="base-types-vs-sub-types">Base Types vs Sub-types</h2>
+<p>In the previous post I rather cryptically said</p>
+<blockquote>
+Finally, when declaring types we almost always use the base type (e.g. <code>Option</code>) instead of a subtype (e.g. <code>None</code>) so the lack of exhaustiveness checking is very rarely an issue.
+</blockquote>
+<p>Say you define an algebraic data type</p>
+<pre><code>sealed trait Base
+final case class Foo(a: Int) extends Base
+final case class Bar(a: String) extends Base</code></pre>
+<p>You should almost always just refer to the <code>Base</code> trait when you declare types, not the subtypes. Some good reasons:</p>
+<ul>
+<li>to ensure you get exhaustiveness checking;</li>
+<li>to avoid issues with invariant type classes and invariant containers like <code>Future</code>; and</li>
+<li>it’s often just doesn’t make sense to declare a subtype (why would a method ever declare return type as <code>None</code>?).</li>
+</ul>
+<p>As I explained in the previous article, only sealed types turn on exhaustiveness checking. In the example over this means that values with type <code>Base</code> will have exhaustiveness checking but values of type <code>Foo</code> and <code>Bar</code> will not. That’s one good reason to declare method, return, or variable types as <code>Base</code>.</p>
+<p>Type classes are one of the other big patterns I advocate for Scala. For reasons I won’t go into here (look out for a future blog post) invariant type classes generally work best in Scala. In an invariant type class means that <code>TypeClass[Foo]</code> is <em>not</em> a subtype of <code>TypeClass[Base]</code> and this will cause annoyance. Just use <code>Base</code> everywhere and the problem goes away.</p>
+<p>You might have already run into this issue if you use invariant containers such as <code>Future</code>.</p>
+<p>Finally, there often isn’t a lot of sense in declaring something to have a type that is not the base type of an algebraic data type. For example, if a method were to only return <code>None</code> it should just return <code>()</code>. If it was to return only <code>Some</code> it should just return the value wrapped in the <code>Some</code>.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

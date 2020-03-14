@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Uniting Church and State: FP and OO Together</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Uniting Church and State: FP and OO Together</h1>
+        
+            <p><small>June  2, 2017</small></p>
+        
+    </section>
+    <section>
+        <p>This is a post about church and state, and how we can unite the two for a better world, while avoiding unfortunate side effects.</p>
+<p>Political metaphors aside, this really <em>is</em> a post about Church—<a href="alonzo-church">Alonzo Church</a>—and how we can use his idea of Church encoding to unite pure FP and imperative OO to achieve, if not a better world, at least better code.</p>
+<!--more-->
+<p>But, you say, Scala already claims to be an object-functional hybrid, so why do we need to know about Church encodings?</p>
+<p>I’m glad you asked.</p>
+<p>Although Scala provides both OO and FP language features this is not sufficient to give coherent design principles encompassing both paradigms. Scala usage tends to fracture into FP or OO camps (I’m in the FP camp) as multi-paradigm design is hard.</p>
+<p>The Church encoding provides such a unifying design principle.</p>
+<p>In what follows I’m going to show that</p>
+<ul>
+<li>FP and OO code make different tradeoffs with respect to extensibility, static guarantees, and performance.</li>
+<li>Church encoding gives us a way to transform FP designs into OO designs.</li>
+<li>We can use the inverse of Church encoding, called reification, to transform OO designs to FP.</li>
+<li>This means we can keep one coherent design or mental model and implement it in FP or OO style according to the tradeoffs we want to make, meaning we can truly unify FP and OO.</li>
+<li>This is useful, as seen in a real commercial system Underscore developed that uses Church encoding for a big performance improvement.</li>
+<li>Finally, the idea of Church encoding gives us a way to unify other FP techniques that are creating buzz in the Scala community: Free structures, and tagless final interpreters.</li>
+</ul>
+<h2 id="fp-vs-oo">FP vs OO</h2>
+<p>We are going to start by reviewing classic FP and OO techniques, and see how the two techniques make different tradeoffs in terms of extensibility.</p>
+<p>Our example will be a very simple calculator. We’ll just have basic arithemetic operations: add, subtract, multiply and divide.</p>
+<h3 id="classic-oo">Classic OO</h3>
+<p>We can argue about what makes good OO design, but here’s some code that I think is reasonably typical and very straightforward:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">class</span> Calculator {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">def</span> <span class="fu">literal</span>(v: Double): Double = v</a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">def</span> <span class="fu">add</span>(a: Double, b: Double): Double = a + b</a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">def</span> <span class="fu">subtract</span>(a: Double, b: Double): Double = a - b</a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">def</span> <span class="fu">multiply</span>(a: Double, b: Double): Double = a * b</a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">def</span> <span class="fu">divide</span>(a: Double, b: Double): Double = a / b</a>
+<a class="sourceLine" id="cb1-7" title="7">}</a></code></pre></div>
+<p>In this design we can easily add new calculation operations, by creating a subclass. For example, if we want to add trigonometric functions like <code>cos</code>, <code>sin</code>, we can create a subclass <code>TrigCalculator</code> and add them there.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">class</span> TrigCalculator <span class="kw">extends</span> Calculator {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">def</span> <span class="fu">sin</span>(v: Double): Double = Math.<span class="fu">sin</span>(v)</a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">def</span> <span class="fu">cos</span>(v: Double): Double = Math.<span class="fu">cos</span>(v)</a>
+<a class="sourceLine" id="cb2-4" title="4">}</a></code></pre></div>
+<p>We can’t easily change the way we perform these operations. If we want to pretty-print expressions, returning a <code>String</code>, or compute with <code>BigDecimal</code> for exact results, we have to change all our existing code.</p>
+<p>In summary it is easy to add new operations to our calculator (methods) but hard to add new actions (result types).</p>
+<h3 id="classic-fp">Classic FP</h3>
+<p>Now let’s see how we might approach the same problem from a classic FP perspective. Again, we’re going for a very basic approach like we might write in, say, ML.</p>
+<p>The first step is to implement an algebraic data type describing the computations we allow.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Calculation</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Literal</span>(v: Double) <span class="kw">extends</span> Calculation</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Add</span>(a: Calculation, b: Calculation) <span class="kw">extends</span> Calculation</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Subtract</span>(a: Calculation, b: Calculation) <span class="kw">extends</span> Calculation</a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Multiply</span>(a: Calculation, b: Calculation) <span class="kw">extends</span> Calculation</a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> <span class="fu">Divide</span>(a: Calculation, b: Calculation) <span class="kw">extends</span> Calculation</a></code></pre></div>
+<p>Now we implement a method to evaluate these expressions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">def</span> <span class="fu">eval</span>(c: Calculation): Double = </a>
+<a class="sourceLine" id="cb4-2" title="2">  c <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="kw">case</span> <span class="fu">Literal</span>(v)     =&gt; v</a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">case</span> <span class="fu">Add</span>(a, b)      =&gt; <span class="fu">eval</span>(a) + <span class="fu">eval</span>(b)</a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="kw">case</span> <span class="fu">Subtract</span>(a, b) =&gt; <span class="fu">eval</span>(a) - <span class="fu">eval</span>(b)</a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="kw">case</span> <span class="fu">Multiply</span>(a, b) =&gt; <span class="fu">eval</span>(a) * <span class="fu">eval</span>(b)</a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="kw">case</span> <span class="fu">Divide</span>(a, b)   =&gt; <span class="fu">eval</span>(a) / <span class="fu">eval</span>(b)</a>
+<a class="sourceLine" id="cb4-8" title="8">  }</a></code></pre></div>
+<p>With this design it’s easy to add new actions. If we want to pretty print, for example, we can easily implement that as a new function with the same structure as <code>eval</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">def</span> <span class="fu">prettyPrint</span>(c: Calculation): String = </a>
+<a class="sourceLine" id="cb5-2" title="2">  c <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="kw">case</span> <span class="fu">Literal</span>(v)     =&gt; v</a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">case</span> <span class="fu">Add</span>(a, b)      =&gt; s<span class="st">&quot;${prettyPrint(a)} + ${prettyPrint(b)}&quot;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">case</span> <span class="fu">Subtract</span>(a, b) =&gt; s<span class="st">&quot;${prettyPrint(a)} - ${prettyPrint(b)}&quot;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="kw">case</span> <span class="fu">Multiply</span>(a, b) =&gt; s<span class="st">&quot;${prettyPrint(a)} * ${prettyPrint(b)}&quot;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="kw">case</span> <span class="fu">Divide</span>(a, b)   =&gt; s<span class="st">&quot;${prettyPrint(a)} / ${prettyPrint(b)}&quot;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  }</a></code></pre></div>
+<p>However it’s impossible to add new operations, like <code>sin</code> and <code>cos</code>, to this representation without code changes.</p>
+<h3 id="conclusions">Conclusions</h3>
+<p>We’ve divided our calculator into two parts:</p>
+<ul>
+<li>operations, which are the things we want to do (add, subtract, divide, etc.); and</li>
+<li>actions, which are how we want to do them (using <code>Double</code>, pretty print, etc.)</li>
+</ul>
+<p>This corresponds to the FP mantra of separating the description of what we want to do (operations) from how we do it (actions). Notably this is how we control effects in FP—they only happen when executing actions so while we’re describing that program we can ignore them.</p>
+<p>We see that OO and FP allow easy extension in different directions:</p>
+<ul>
+<li>OO makes it easy to add new operations, but makes adding new actions hard; whereas</li>
+<li>FP makes it easy to add new actions, but makes adding new operations hard.</li>
+</ul>
+<h2 id="church-encoding">Church Encoding</h2>
+<p>The Church encoding gives us a way to relate the OO and FP representation.</p>
+<p>Let’s look at <code>eval</code> from the FP implementation</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">def</span> <span class="fu">eval</span>(c: Calculation): Double = </a>
+<a class="sourceLine" id="cb6-2" title="2">  c <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="kw">case</span> <span class="fu">Literal</span>(v)     =&gt; v</a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">case</span> <span class="fu">Add</span>(a, b)      =&gt; a + b</a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="kw">case</span> <span class="fu">Subtract</span>(a, b) =&gt; a - b</a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="kw">case</span> <span class="fu">Multiply</span>(a, b) =&gt; a * b</a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="kw">case</span> <span class="fu">Divide</span>(a, b)   =&gt; a / b</a>
+<a class="sourceLine" id="cb6-8" title="8">  }</a></code></pre></div>
+<p>and compare it to the OO implementation</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">class</span> Calculator {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">def</span> <span class="fu">literal</span>(v: Double): Double = v</a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">def</span> <span class="fu">add</span>(a: Double, b: Double): Double = a + b</a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">def</span> <span class="fu">subtract</span>(a: Double, b: Double): Double = a - b</a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">def</span> <span class="fu">multiply</span>(a: Double, b: Double): Double = a * b</a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="kw">def</span> <span class="fu">divide</span>(a: Double, b: Double): Double = a / b</a>
+<a class="sourceLine" id="cb7-7" title="7">}</a></code></pre></div>
+<p>We can see they are very similar. The FP code inspects the <code>Calculation</code> element it is passes to choose the right action to take. The OO implementation breaks out the actions into their own method, and relies on the caller to make the choice for them.</p>
+<p>The relationship is this: each constructor in the FP implementation becomes a method in the OO implementation. This removes the need for the pattern matching. The transformation is known as <em>Church encoding</em>.</p>
+<p>We can go the opposite way as well: convert every method in the OO representation into a case class in a sealed trait (an algebraic data type), and then use a pattern match to chose the action to take (a structural recursion). This transformation is known as <em>reification</em>.</p>
+<h3 id="unification">Unification</h3>
+<p>We’ve seen that the OO and FP representations have different types of extensibility, and we can transform between the two representations using Church encoding or reification.</p>
+<p>This means we can keep one mental model and choose the representation that is best for the problem at hand. We can think of OO and FP not as entirely different programming paradigms but choices we make to encode a solution to the problem according to the tradeoffs we want to make.</p>
+<h2 id="case-study">Case Study</h2>
+<p>Let’s see an example where where this transformation is useful. One aspect we haven’t considered yet is performance. In the FP representation we must allocate memory to hold the data structure that represents the operations we want to perform. In the OO representation we don’t have that allocation. This can be advantageous.</p>
+<p>We were recently engaged to develop a time series analysis system for <a href="http://maana.io/">Maana</a>, the Seattle enterprise knowledgement management startup. This system had some fairly stringent performance demands that justified implementing a custom system rather than using off-the-shelf software like Spark.</p>
+<p>The nice thing about time series is they have a well defined order, and algorithms always respect that order. So we can implement the foundation of the system as a stream processing engine that works over the data from beginning to end, whether it is arriving in real-time or being streamed from disk.</p>
+<p>There is a lot of prior work on the kind of API for this system. Spark, Monix, FS2, and Akka Streams all provide examples. We don’t need the rich API of these system in our implementation, and we have some methods that are particular to time series, but it provides a good mental model for what we’ll be talking about.</p>
+<p>In this kind of system we create a directed acyclic graph (DAG) representing what we want to perform, and then run it when we’ve finished the description. This is the classic FP model of separating describing what you want to do from carrying it out. Nodes in our graph represent things like resampling the time series, or restricting it to a particular time range.</p>
+<p>Our system has a pull based implementation model. Data flows from upstream to downstream. The most downstream node is the root, and the root pulls data through the system by requesting data from the nodes immediately upstream. They in turn request data from nodes immediately upstream from them, and this happens recursively till leaf nodes are reached. Leaf nodes then send data downstream, which gets transformed along the way until it reaches the root.</p>
+<p>We don’t just pass back data; we need to include some control information as well. We might have run out of data, we might be waiting for more (e.g. if we’ve filtering out certain time ranges), or we might have encountered an error. We can use this representation:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Result[+A]</a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Emit[A](get: A) <span class="kw">extends</span> Result[A]</a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Waiting <span class="kw">extends</span> Result[Nothing]</a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Complete <span class="kw">extends</span> Result[Nothing]</a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Error(reason: ErrorType) <span class="kw">extends</span> Result[Nothing]</a></code></pre></div>
+<p>The problem here is we allocate a lot. We allocate a <code>Result</code> for every node in the DAG and for every data element we process. Usually we process a lot more elements than we have nodes in the graph.</p>
+<p>We can use the Church encoding to reduce the allocation! Instead of returning a <code>Result</code> we can call a <code>Receiver</code> with the correct method, where <code>Receiver</code> is the Church-encoding of <code>Result</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">trait</span> Receiver[A] {</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">def</span> <span class="fu">emit</span>(a: A): Unit</a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">def</span> <span class="fu">waiting</span>(): Unit</a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="kw">def</span> <span class="fu">complete</span>(): Unit</a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="kw">def</span> <span class="fu">error</span>(reason: ErrorType): Unit</a>
+<a class="sourceLine" id="cb9-6" title="6">}</a></code></pre></div>
+<p>The action performed by a given node is constant so we can allocate one receiver per node in the graph and completely eliminate per-element allocation.</p>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>Sounds good in theory, but how does it work out in practice? On <a href="https://github.com/noelwelsh/church-and-state">Github</a> I have a simplified implementation that demonstrates the FP and the Church-encoding representations. For a simple benchmark I get the following results</p>
+<pre><code>termination.StreamBenchmark.zipAndAdd avgt 200 532.190 ± 2.724 ms/op
+partial.StreamBenchmark.zipAndAdd     avgt 200 387.252 ± 2.165 ms/op </code></pre>
+<p>where <code>termination</code> is the FP style, and <code>partial</code> is the Church-encoded representation.</p>
+<p>The Church encoded representation is 1.4x faster. This is a great improvement from a simple program transformation we can apply in a very systematic way.</p>
+<h3 id="continuation-passing-style">Continuation Passing Style</h3>
+<p>You may have noticed we have changed from <em>returning</em> a <code>Result</code> to <em>calling</em> a <code>Receiver</code>. Essentially we’ve inverted our control-flow. How does this effect our code? This is another program transformation, known as continuation-passing style (CPS). Writing code in continuation passing style is not especially hard—it’s a well defined transformation, just like Church encoding is well defined—and it’s something that people who use callback-heavy APIs, such as Node.js programmers, do all the time.</p>
+<h3 id="conclusions-1">Conclusions</h3>
+<p>In summary we Church-encoded our <code>Result</code> type, and then CPSed the code that used it. In fact we only partially did this. If you look in the Github repository you’ll see examples that are fully Church encoded as well. This is an important point: it’s not all or nothing with these techniques. You can apply them to a small part of your code or the entire system.</p>
+<p>The result for us was a big performance improvement by avoiding excessive allocation. This is important to achieve our performance goals. Usually optimisation means writing lots of nasty code. I wouldn’t say the code we ended up with is paritcularly beautiful but it is related to the clearer original code by two systematic transformations: Church encoding and continuation passing style. We can easily reverse these transformations, if only in our head, to get back to the code that is easier to work with though less performant.</p>
+<h2 id="type-classes-and-free-structures">Type classes and Free structures</h2>
+<p>I now want to expand a bit more on the idea of Church encoding being a unifying idea.</p>
+<p>Let’s look at a typical type class. Here’s how <code>Monad</code> might look in something like Cats (the actual implementation also has <code>tailRecM</code>, which I’ve removed for clarity.)</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">trait</span> Monad[F[_]] {</a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">def</span> flatMap[A,B](fa: F[A])(f: (A) =. F[B]): F[B]</a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="kw">def</span> pure[A](x: A): F[A]</a>
+<a class="sourceLine" id="cb11-4" title="4">}</a></code></pre></div>
+<p>This looks a lot like a Church encoding. It is! But what is it a Church encoding of? If we reify it (remember reification is the opposite of Church encoding) we get something like</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Monad[F[_],A]</a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> FlatMap[F[_],A,B](fa: Monad[F,A], f: A =&gt; Monad[F,B]) <span class="kw">extends</span> Monad[F[_],B]</a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Pure[F[_], A](x: A) <span class="kw">extends</span> Monad[F[_],A]</a></code></pre></div>
+<p>This is the free monad! (The usual encoding of the free monad is slightly different for reasons of efficiency but the concept is the same.)</p>
+<p>So type classes are Church encodings of free structures, or alternatively, free structures are reifications of type classes.</p>
+<h2 id="extensibility">Extensibility</h2>
+<p>Earlier I said OO style makes it easy to add new operations while FP makes it easy to add new actions. But with type classes we can do both. We can extend a type class with new operations (such as <code>Monad</code> being an extension of <code>Applicative</code>), which is OO style extension. We can also add a new implementation of a type class for a given type (think of the many <code>Monoid</code> instances for <code>Int</code>), which is FP style extension. Did I lie to you?</p>
+<p>Dear reader, I would never knowingly lie to you. What has happened here is we’ve snuck in an extra degree of abstraction over the basic OO code I showed earlier. It’s the type parameter <code>F</code> in the definition of <code>Monad</code> below.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">trait</span> Monad[F[_]] {</a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="kw">def</span> flatMap[A,B](fa: F[A])(f: (A) ⇒ F[B]): F[B]</a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="kw">def</span> pure[A](x: A): F[A]</a>
+<a class="sourceLine" id="cb13-4" title="4">}</a></code></pre></div>
+<p>We can apply the same trick to <code>Calculator</code>. If we add a type parameter to represent the output type we can now implement different actions, such as pretty printing which returns a <code>String</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">trait</span> Calculator[A] {</a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">def</span> <span class="fu">literal</span>(v: Double): A </a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="kw">def</span> <span class="fu">add</span>(a: A, b: A): A </a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="kw">def</span> <span class="fu">subtract</span>(a: A, b: A): A </a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="kw">def</span> <span class="fu">multiply</span>(a: A, b: A): A </a>
+<a class="sourceLine" id="cb14-6" title="6">  <span class="kw">def</span> <span class="fu">divide</span>(a: A, b: A): A </a>
+<a class="sourceLine" id="cb14-7" title="7">}</a>
+<a class="sourceLine" id="cb14-8" title="8"></a>
+<a class="sourceLine" id="cb14-9" title="9"><span class="kw">object</span> PrettyPrinter <span class="kw">extends</span> Calculator[String] {</a>
+<a class="sourceLine" id="cb14-10" title="10">  <span class="kw">def</span> <span class="fu">literal</span>(v: Double): String = v.<span class="fu">toString</span></a>
+<a class="sourceLine" id="cb14-11" title="11">  <span class="kw">def</span> <span class="fu">add</span>(a: String, b: String): String = s<span class="st">&quot;($a + $b)&quot;</span></a>
+<a class="sourceLine" id="cb14-12" title="12">  <span class="kw">def</span> <span class="fu">subtract</span>(a: String, b: String): String = s<span class="st">&quot;($a - $b)&quot;</span></a>
+<a class="sourceLine" id="cb14-13" title="13">  <span class="kw">def</span> <span class="fu">multiply</span>(a: String, b: String): String = s<span class="st">&quot;($a * $b)&quot;</span></a>
+<a class="sourceLine" id="cb14-14" title="14">  <span class="kw">def</span> <span class="fu">divide</span>(a: String, b: String): String = s<span class="st">&quot;($a / $b)&quot;</span></a>
+<a class="sourceLine" id="cb14-15" title="15">}</a></code></pre></div>
+<p>When we use a <code>Calculator</code> we should delay the choice of concrete implementation so we can plug in different implementations depending on our needs. This is the separation between describing what we want to occur and carrying it out.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">def</span> expression[A](c: Calculator[A]): A = {</a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="kw">import</span> c._</a>
+<a class="sourceLine" id="cb15-3" title="3"></a>
+<a class="sourceLine" id="cb15-4" title="4">  <span class="fu">add</span>(<span class="fu">literal</span>(<span class="fl">1.0</span>), <span class="fu">subtract</span>(<span class="fu">literal</span>(<span class="fl">3.0</span>), <span class="fu">literal</span>(<span class="fl">2.0</span>)))</a>
+<a class="sourceLine" id="cb15-5" title="5">}</a>
+<a class="sourceLine" id="cb15-6" title="6"></a>
+<a class="sourceLine" id="cb15-7" title="7"><span class="fu">expresssion</span>(PrettyPrinter)</a>
+<a class="sourceLine" id="cb15-8" title="8"><span class="co">// res: String = (1.0 + (3.0 - 2.0))</span></a></code></pre></div>
+<p>If we do this we have basically implemented a <em>tagless final</em> interpreter (sometimes also known as a finally tagless interpreter, or an object algebra in the OO world). If we go the opposite direction, and reify to a free structure, we can use the <code>Inject</code> typeclass to regain the flexibility we’ve lost. This is known as <em>data types à la carte</em> style.</p>
+<p>So we see that tagless final style is effectively a Church encoding of data types a la carte style, or vice versa.</p>
+<h2 id="summary-and-further-reading">Summary and Further Reading</h2>
+<p>Let’s run down what we’ve seen:</p>
+<ul>
+<li>The Church encoding allows us to transform FP style to OO style</li>
+<li>Reification allows us to transform OO style to FP style</li>
+<li>We can choose a style due to the extensibility we want, or due to performance demands</li>
+<li>Type classes are Church encodings of free structures. Free structures are the reification of type classes.</li>
+<li>We can get extensibility in both directions using tagless final style or data types a la carte style. Tagless final is a Church encoding of data types a la carte.</li>
+</ul>
+<p>Hopefully you now agree that the Church encoding is a useful tool for unifying functional and object-oriented programming!</p>
+<p>This post is based on a talk I gave at Scala Days Copenhagen. <a href="../files/noelwelsh-scala-days-copenhagen-church-and-state.pdf">My slides</a> are also available. They have more pictures and fewer words.</p>
+<p>I’d like to end with some more general thoughts. Firstly, I’ve presented the Church encoding in a fairly matter-of-fact style, but it’s taken me quite a while to piece everything together. The pieces are all in the academic literature, and I want to present some of them below, along with some commentary, so others can follow this path. I hope this will make navigating the literature a bit easier for those who are interested, and also show that there are many great ideas to be found out there—though the presentation is often a bit hard to parse for the working programmer<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. Although I’ve tried to make my survey reasonably complete I have no doubt missed some important works; I’m not an academic and this is a blog post, not a peer-reviewed publication.</p>
+<p>The idea of the two orthogonal axes of extensibility (which I called operations and actions) is something I first read in <a href="https://cs.brown.edu/~sk/Publications/Papers/Published/kff-synth-fp-oo/">Synthesizing Object-Oriented and Functional Design to Promote Re-Use</a>. The challenge of allowing extensibility along both axes is known as the <a href="http://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt">Expression Problem</a>.</p>
+<p>In this post I discussed two solutions to the expression problem: <a href="http://okmij.org/ftp/tagless-final/course/lecture.pdf">tagless final interpreters</a> and <a href="http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf">data types a la carte</a>. In the OO world tagless final interpreters are known as <a href="https://www.cs.utexas.edu/~wcook/Drafts/2012/ecoop2012.pdf">object algebras</a>. <a href="https://oleksandrmanzyuk.wordpress.com/2014/06/18/from-object-algebras-to-finally-tagless-interpreters-2/">This fantastic blog post</a> shows the correspondence. Note that tagless final style is sometimes known as finally tagless.</p>
+<p>It’s relatively rare for real programs to require a solution to the expresion problem, so I’m not advocated coverting all code to one of the two styles above, but it does come up in practice. For example, in <a href="https://github.com/underscoreio/doodle/">Doodle</a> I want to be able to render to different backends (adding actions) and support operations specific to a particular platform (adding operations). In Scala the tagless final stye is often easier to work with. There are a number of <a href="https://github.com/scala/bug/issues/9879">type inference</a> <a href="https://github.com/scala/bug/issues/5195">bugs</a> involving generalised algebraic data types (GADTs) in Scala that are needed when using FP style. Tagless final is also a bit more familiar to OO programmers, who make up most of the programmer population at this point in time.</p>
+<p>More on the relationship between data types a la carte style and tagless final style is given in <a href="http://www.cs.ox.ac.uk/jeremy.gibbons/publications/embedding.pdf">Folding Domain-Specific Languages: Deep and Shallow Embeddings</a>. (Reified or FP style is also known as a deep embedding, while Church encoded or OO style is a shallow embedding). I found this paper very interesting and quite easy to read. Note that this paper calls the relationship a Boehm-Berarducci encoding. While this is strictly correct—the Church encoding is between data and the untyped lambda calculus (which Alonzo Church invented)—I believe the essential idea is the same. If you want to know about the Boehm-Berarducci encoding there is <a href="http://okmij.org/ftp/tagless-final/course/Boehm-Berarducci.html">more here</a>. Also note that this paper is a “Functional Pearl”, a specific type of paper published at the International Conference on Functional Programming (ICFP). I find that the Functional Pearls are often the most useful papers at ICFP. For example, the <a href="http://strictlypositive.org/Idiom.pdf">paper introducing Applicatives</a> (called Idioms at the time) is a Functional Pearl.</p>
+<p>It is very easy to explore the academic literature if you go to <a href="https://scholar.google.com/">scholar.google.com</a> and enter the name of a paper that interests you. You can then chase citations forward and backward to time to get more context.</p>
+<p>Finally, although I’ve presented this as a unification of FP and OO, it is purely a unification of FP and OO <em>programming techniques</em>, not a unification of the FP and OO <em>programming paradigms</em>. I presented on the two paradigms at <a href="https://www.youtube.com/watch?v=bL-CcjKW1lw">Scala Days last year</a>. I’m still working solidly in the functional programming paradigm: avoiding mutable state, emphasising static reasoning, and so on.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>All of this literature is reasonably readable, in my opinion. A paper that I consider both spectacularly unreadable but still important is <a href="http://doc.utwente.nl/56289/1/meijer91functional.pdf">Functional Programming with Bananas, Lenses, Envelopes and Barbed Wire</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

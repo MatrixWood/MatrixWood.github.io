@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Deriving the Free Monad</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Deriving the Free Monad</h1>
+        
+            <p><small>April 23, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>The free monad is defined by this structure<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A]</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[F[_], A](a: A) <span class="kw">extends</span> Free[F, A]</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[F[_], A](s: F[Free[F, A]]) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>We can use the free monad without understanding its implementation, but to <em>really</em> understand it we need to know why it is defined this way.</p>
+<p>It certainly wasn’t obvious to me why this is the correct definition, and reading the literature quickly devolved into “doughnoids in the category of pretzelmorphisms” land. Here I want to present an explanation aimed at programmers that doesn’t involve abstract alphabet-soup.</p>
+<!--more-->
+<h2 id="preliminaries">Preliminaries</h2>
+<p>The free monad represents the minimal possible structure to implement a monad and nothing else. This is achieved by separating the structure of monadic computations from the process that gives them meaning. The free monad gives us the means to construct a monad from any type (that is also a functor)<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> by wrapping it in the free monad.</p>
+<p>Let me give a simple example of this separation of structure and meaning that doesn’t involve any monads. Consider the expression</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="dv">1</span> + <span class="dv">2</span> + <span class="dv">3</span></a></code></pre></div>
+<p>When we write this expression we bundle the structure of the computation (two additions) with the meaning given to that computation (<code>Int</code> addition).</p>
+<p>We could separate structure and meaning by representing the structure of the computation as data, perhaps as<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="fu">Add</span>(<span class="dv">1</span>, <span class="fu">Add</span>(<span class="dv">2</span>, <span class="dv">3</span>))</a></code></pre></div>
+<p>Now we can write a simple interpreter to give meaning to this structure. Having separated the <em>abstract syntax tree</em> from the interpreter we can choose different interpretations for a given tree, such as computing with <a href="http://en.wikipedia.org/wiki/Dual_number">dual numbers</a> to automatically compute derivatives, or running the code on a GPU for performance.</p>
+<p>The free monad is just an abstract syntax tree representation of a monad. It has the advantage that we can define custom interpreters for the computations represented in the free monad, and with some further tricks compose monads and interpreters<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
+<p>We should be able to derive the free monad from the operations required to define a monad, as it is just a representation of those operations as a data structure. Before we dive into the free monad, however, I want to return to our example of addition and derive the free monoid. This serves as a useful warmup before we tackle the free monad.</p>
+<h2 id="the-free-monoid">The Free Monoid</h2>
+<p>Our goal with implementing the free monoid is to represent computations like</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="dv">1</span> + <span class="dv">2</span> + <span class="dv">3</span></a></code></pre></div>
+<p>in a generic way without giving them any particular meaning.</p>
+<p>The free monoid will wrap an arbitrary type and must itself be a monoid.</p>
+<p>A monoid for some type <code>A</code> is defined by:</p>
+<ol type="1">
+<li>an operation <code>append</code> with type <code>(A, A) =&gt; A</code>; and</li>
+<li>an element <code>zero</code> of type `A</li>
+</ol>
+<p>The following laws must also hold:</p>
+<ol type="1">
+<li><code>append</code> is associative, meaning <code>append(x, append(y, z)) == append(append(x, y), z)</code> for all <code>x</code>, <code>y</code>, and <code>z</code>, in <code>A</code>.</li>
+<li><code>zero</code> is an identity of <code>append</code>, meaning <code>append(a, zero) == append(zero, a) == a</code> for any <code>a</code> in <code>A</code>.</li>
+</ol>
+<p>The monoid operations (<code>append</code> and <code>zero</code>) suggest we want a structure something like</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> FreeMonoid[+A]</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Zero <span class="kw">extends</span> FreeMonoid[Nothing]</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Append[A](l: A, r: A) <span class="kw">extends</span> FreeMonoid[A]</a></code></pre></div>
+<p>but this doesn’t work – we can’t write, for instance, <code>Append(Zero, Zero)</code> because the types don’t line up.</p>
+<p>We can use a structure like</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> FreeMonoid[+A]</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Zero <span class="kw">extends</span> FreeMonoid[Nothing]</a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Value[A](a: A) <span class="kw">extends</span> FreeMonoid[A]</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Append[A](l: FreeMonoid[A], r: FreeMonoid[A]) <span class="kw">extends</span> FreeMonoid[A]</a></code></pre></div>
+<p>Now we can represent <code>1 + 2 + 3</code> as</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb7-1" title="1"><span class="fu">Append</span>(Value(<span class="dv">1</span>), <span class="fu">Append</span>(Value(<span class="dv">2</span>), Value(<span class="dv">3</span>)))</a></code></pre></div>
+<p>This is not the simplest representation we can use. With a bit of algebraic manipulation, justified by the monoid laws, we can normalize any monoid expression into a form that allows for a simpler representation. Let’s illustrate this via algebraic manipulation on <code>1 + 2 + 3</code>.</p>
+<p>The identity law means we can insert the addition of zero in any part of the computation without changing the result, and likewise we can remove any zeros (unless the entire expression consists of just zero). We’re going to decree that any normalized expression must have a single zero at the end of the expression like so:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1"><span class="dv">1</span> + <span class="dv">2</span> + <span class="dv">3</span> + <span class="dv">0</span></a></code></pre></div>
+<p>The associativity law means we can place brackets wherever we want. We’re going to decide to bracket expressions so traversing the expression from left to right goes from outermost to innermost bracket, like so:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb9-1" title="1">(<span class="dv">1</span> + (<span class="dv">2</span> + (<span class="dv">3</span> + <span class="dv">0</span>)))</a></code></pre></div>
+<p>With these changes – which by the monoid laws make no difference to the meaning of the expression – we can construct the following abstract syntax tree.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> FreeMonoid[+A]</a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">object</span> Zero <span class="kw">extends</span> FreeMonoid[Nothing]</a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Append[A](l: A, r: FreeMonoid[A]) <span class="kw">extends</span> FreeMonoid[A]</a></code></pre></div>
+<p>We can represent <code>1 + 2 + 3</code> (normalized to <code>(1 + (2 + (3 + 0)))</code>) as</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb11-1" title="1"><span class="fu">Append</span>(<span class="dv">1</span>, <span class="fu">Append</span>(<span class="dv">2</span>, <span class="fu">Append</span>(<span class="dv">3</span>, Zero)))</a></code></pre></div>
+<p>The final step is to recognise that this structure is isomorphic (in the real, not the <a href="http://isomorphic.net/">Javascript</a>, sense) to <code>List</code>. So we could just as easily write</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb12-1" title="1"><span class="dv">1</span> :: <span class="dv">2</span> :: <span class="dv">3</span> :: Nil</a></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb13-1" title="1">List(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</a></code></pre></div>
+<p>Our final step is to make sure that <code>List</code> itself a monoid. It is. The monoid operations on <code>List</code> are:</p>
+<ul>
+<li><code>append</code> is <code>++</code>, list concatentation;</li>
+<li><code>zero</code> is <code>Nil</code>, the empty list; and</li>
+<li>we can “lift” any type into the free monoid using <code>List.apply</code></li>
+</ul>
+<p>High fives all around – we’ve derived the free monoid from first principles.</p>
+<h2 id="the-free-monad">The Free Monad</h2>
+<p>We are now ready to tackle the free monad. We can take the same approach starting with the monad operations <code>point</code> and <code>flatMap</code>, but our task will be easier if we reformulate monads in terms of <code>point</code>, <code>map</code>, and <code>join</code>. Under this formulation a monad for a type <code>F[_]</code> has:</p>
+<ul>
+<li>an operation <code>point</code> with type <code>A =&gt; F[A]</code>;</li>
+<li>an operation <code>join</code> with type <code>F[F[A]] =&gt; F[A]</code>; and</li>
+<li>an operation <code>map</code> with type <code>(F[A], A =&gt; B) =&gt; F[B]</code>.</li>
+</ul>
+<p>From this list of operations we can start to create an abstract syntax tree. We start with the definition of <code>Free</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A]</a></code></pre></div>
+<p>We can directly convert <code>point</code> into a case <code>Return</code> (following the names I introduced in the introduction).</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[F[_], A](a: A) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>We are going to convert <code>join</code> into a case <code>Suspend</code>. What is the type of the value we store inside <code>Suspend</code>? We might think it should store a value of type <code>F[F[A]]</code> but if we did this we wouldn’t be able to store, say, a <code>Return</code> inside the outer <code>F</code>. We can break it down like this:</p>
+<ul>
+<li>The inner <code>F[A]</code> will be represented by an instance of the free monad, and thus has type <code>Free[F, A]</code>.</li>
+<li>The outer <code>F[_]</code> will be wrapped in the <code>Suspend</code> we’re creating.</li>
+</ul>
+<p>Therefore the value we should store has type <code>F[Free[F, A]]</code> giving us</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[F[_], A](f: F[Free[F, A]]) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>Finally we have <code>map</code>. This suggests a case like<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Map[F[_], A, B](fa: Free[F, A], f: A =&gt; B) <span class="kw">extends</span> Free[F, B]</a></code></pre></div>
+<p>This looks a little problematic. We have three type parameters while <code>Free</code> only has two. In fact we can do away with this case! We inherit <code>map</code> from monad being a functor. A <code>map</code> represents a pure, not an effectful, computation. We don’t need to represent <code>Map</code> in the free monad abstract syntax tree so long as we can implement the <code>map</code> operation in our free monad.</p>
+<p>Our final free monad data type looks like</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A]</a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[F[_], A](a: A) <span class="kw">extends</span> Free[F, A]</a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[F[_], A](s: F[Free[F, A]]) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>This is what we saw in the introduction. But does it really work? To show it does, let’s implement the monad operations on this data type. We’ll use the more familiar <code>flatMap</code> and <code>point</code> formulation, which is better suited to Scala, than the <code>point</code>, <code>join</code>, and <code>map</code> formulation above.</p>
+<p>We can knock out <code>point</code> easily enough.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">object</span> Free {</a>
+<a class="sourceLine" id="cb19-2" title="2">  <span class="kw">def</span> point[F[_]](a: A): Free[F, A] = Return[F, A](a)</a>
+<a class="sourceLine" id="cb19-3" title="3">}</a></code></pre></div>
+<p>Things get a bit trickier with <code>flatMap</code>, however. Since we know <code>Free</code> in an algebraic data type we can easily get the structural recursion skeleton.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A] {</a>
+<a class="sourceLine" id="cb20-2" title="2">  <span class="kw">def</span> flatMap[B](f: A =&gt; Free[F, B]): Free[F, B] =</a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="kw">this</span> <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb20-4" title="4">      <span class="kw">case</span> <span class="fu">Return</span>(a)  =&gt; ???</a>
+<a class="sourceLine" id="cb20-5" title="5">      <span class="kw">case</span> <span class="fu">Suspend</span>(s) =&gt; ???</a>
+<a class="sourceLine" id="cb20-6" title="6">    }</a>
+<a class="sourceLine" id="cb20-7" title="7">}</a></code></pre></div>
+<p>The case for <code>Return</code> just requires us to follow the types.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A] {</a>
+<a class="sourceLine" id="cb21-2" title="2">  <span class="kw">def</span> flatMap[B](f: A =&gt; Free[F, B]): Free[F, B] =</a>
+<a class="sourceLine" id="cb21-3" title="3">    <span class="kw">this</span> <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb21-4" title="4">      <span class="kw">case</span> <span class="fu">Return</span>(a)  =&gt; <span class="fu">f</span>(a)</a>
+<a class="sourceLine" id="cb21-5" title="5">      <span class="kw">case</span> <span class="fu">Suspend</span>(s) =&gt; ???</a>
+<a class="sourceLine" id="cb21-6" title="6">    }</a>
+<a class="sourceLine" id="cb21-7" title="7">}</a></code></pre></div>
+<p>The case for <code>Suspend</code> is a bit trickier. The value <code>s</code> has type <code>F[Free[F, A]]</code>. The only operation we (currently) have available is <code>f</code>, which accepts an <code>A</code>. We could <code>flatMap</code> <code>f</code> over the <code>Free[F, A]</code> wrapped in <code>F</code>, but we haven’t yet required any operations on <code>F</code>. If we require <code>F</code> is a functor we can then <code>map</code> over it. Concretely, we can use this code snippet:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb22-1" title="1">s <span class="fu">map</span> (free =&gt; free flatMap f) </a></code></pre></div>
+<p>A bit of algebra shows the result has type <code>F[Free[F, B]]</code>, and we can wrap that in a <code>Suspend</code> to get a result of type <code>Free[F, B]</code>. Our final implementation is thus</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A] {</a>
+<a class="sourceLine" id="cb23-2" title="2">  <span class="kw">def</span> flatMap[B](f: A =&gt; Free[F, B])(<span class="kw">implicit</span> functor: Functor[F]): Free[F, B] =</a>
+<a class="sourceLine" id="cb23-3" title="3">    <span class="kw">this</span> <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb23-4" title="4">      <span class="kw">case</span> <span class="fu">Return</span>(a)  =&gt; <span class="fu">f</span>(a)</a>
+<a class="sourceLine" id="cb23-5" title="5">      <span class="kw">case</span> <span class="fu">Suspend</span>(s) =&gt; <span class="fu">Suspend</span>(s <span class="fu">map</span> (_ flatMap f))</a>
+<a class="sourceLine" id="cb23-6" title="6">    }</a>
+<a class="sourceLine" id="cb23-7" title="7">}</a></code></pre></div>
+<p>We can write <code>map</code> in terms of <code>flatMap</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">def</span> map[B](f: A =&gt; B)(<span class="kw">implicit</span> functor: Functor[F]): Free[F, B] =</a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="fu">flatMap</span>(a =&gt; <span class="fu">Return</span>(<span class="fu">f</span>(a)))</a></code></pre></div>
+<p>It’s left as an exercise to the reader to prove the monad laws hold.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>In this blog post I’ve tried to explain how the free monad comes to be without invoking category theory. Hopefully this sheds a bit more light on the construction, and shows it’s a natural consequence of the monad operations.</p>
+<p>There is a lot more to the free monad than just constructing it – using it is rather important too. I’ve linked to a few more ideas in the footnotes, but I have another blog post the describes why the free monad is interesting. Finally, our book <a href="../training/courses/advanced-scala-scalaz/">Essential Interpreters</a> has complete coverage of the free monad (at least it will, when we’ve written it!)</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>There are other ways of defining the free monad, but this is the most common in my reading.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>The free monad requires that we wrap it around a functor. There is another trick, called the Coyoneda, that allows us to turn any type into a functor. This allows us to wrap any type with the free monad (by first constructing a Coyoneda functor for it). In this discussion we’re not going to cover the Coyoneda so for our purposes the free monad can only be wrapped around a functor.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>This data structure can’t actually be implemented. The right-hand element of <code>Add</code> is an <code>Add</code> in one case and an <code>Int</code> in another. We’ll see how to actually implement this in the next section.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+<li id="fn4"><p>This extension is described in <a href="http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf">Data Types a la Carte</a> and eventually will be described in <a href="http://underscore.io/training/courses/advanced-scala-scalaz/">Essential Interpreters</a>.<a href="#fnref4" class="footnote-back">↩</a></p></li>
+<li id="fn5"><p>If you look at the <a href="https://github.com/scalaz/scalaz/blob/series/7.2.x/core/src/main/scala/scalaz/Free.scala">Scalaz implementation</a> of free monads you see a case very much like this called <code>GoSub</code>. This actually represents <code>flatMap</code> (read the types) but it isn’t strictly necessary if we’re not also implementing trampolining as Scalaz’s implementation does.<a href="#fnref5" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Doom Emacs Workflows</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Doom Emacs Workflows</h1>
+        
+            <p><small>January 10, 2019</small></p>
+        
+    </section>
+    <section>
+        <p><em>Last update: 15 February 2020</em></p>
+<p>I recently switched to <a href="https://github.com/hlissner/doom-emacs">Doom Emacs</a> from Spacemacs. The Doom documentation is currently quite sparse, so I’ve posted here my personal notes on using Doom along with a description of my workflow (something I find vital but missing from most documentation). Doom might be for you if</p>
+<ul>
+<li>you like Emacs but want to use Vim keybindings;</li>
+<li>you don’t have time to configure all the nice libraries like <code>helm</code>; and</li>
+<li>you find Spacemacs too slow.</li>
+</ul>
+<p>I’m not going into detail on how Emacs works or basic Vim keybindings here—the focus is on the things I found different and useful.</p>
+<!--more-->
+<h2 id="installation">Installation</h2>
+<p>You definitely want to use the <code>develop</code> branch, not <code>master</code>! This means:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">git</span> clone https://github.com/hlissner/doom-emacs ~/.emacs.d</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="bu">cd</span> ~/.emacs.d</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="fu">git</span> checkout develop</a></code></pre></div>
+<p>Then run <code>bin/doom quickstart</code> to get everything setup. Run <code>bin/doom help</code> to see what other commands are available.</p>
+<h2 id="workflow-projects-and-workspaces">Workflow: Projects and Workspaces</h2>
+<p>I find it useful to manage my work with projects and workspaces. I get two benefits from this: it’s faster to find the things I’m looking for as I only look within the current project, and it’s faster to get to work as I can save and restore window and buffer configuration. In Doom this means using <a href="https://github.com/bbatsov/projectile">projectile</a> and <a href="https://github.com/Bad-ptr/persp-mode.el">persp-mode</a>.</p>
+<p>The basic workflow is:</p>
+<ul>
+<li><p>Decide what I’m working on. Is this a distinct project, or is it something that spans multiple projects (such as managing my todo lists) or doesn’t need to live in a project (such as doing a quick calculation in a scratch buffer)? If it’s a distinct project it gets it’s own workspace. If not I’ll do it in the default workspace (<code>main</code>).</p></li>
+<li><p>Switch to the appropriate workspace with <code>SPC TAB .</code> If the appropriate workspace is not loaded load it with <code>SPC TAB l</code>. Otherwise create a new workspace with <code>SPC TAB n</code>. If I’m creating a new workspace I will often give it a more informative name, using <code>SPC TAB r</code> and then save with <code>SPC TAB s</code>.</p></li>
+<li><p>If I’m switching to an existing workspace Emacs will be returned to the state it was in when I last worked on the project and I can get straight to work. If not I’ll select a project for this workspace using <code>SPC p p</code> and then get to work.</p></li>
+</ul>
+<p>Three very useful commands are:</p>
+<ul>
+<li><code>SPC SPC</code> to switch to a file within the current project, with fuzzy completion; and</li>
+<li><code>SPC ,</code> to switch to a buffer within the current project, again with fuzzy completion.</li>
+<li><code>SPC fr</code> to load a recently viewed file.</li>
+</ul>
+<h2 id="common-tasks">Common Tasks</h2>
+<p>Things I do all the time:</p>
+<ul>
+<li><p><code>SPC :</code> for <code>M-x</code>.</p></li>
+<li><p><code>SPC gg</code> for <a href="https://magit.vc/">Magit</a>, which is the only sane way to use Git.</p></li>
+</ul>
+<p>Things I occasionally do:</p>
+<ul>
+<li><p><code>SPC .</code> to find a file. Using <code>SPC SPC</code> is faster, so try to use <code>SPC .</code> only when you want to switch to something outside the current project.</p></li>
+<li><p><code>SPC b B</code> to switch to a buffer outside the current project.</p></li>
+</ul>
+<h2 id="finding-text">Finding Text</h2>
+<p>If you know there is text somewhere, but you don’t know where, there are two basic ways to find it:</p>
+<ul>
+<li><p><code>SPC sp</code> to search all files in the current project. (Press <code>SPC s</code> and wait for a popup for other options.) When you have a buffer of matches you can jump to the one your want by pressing return or press <code>C-c C-e</code> to edit <em>all</em> the files at once. You can then do whatever edits you want and press <code>C-c C-c</code> to commit, or <code>C-c C-k</code> to abandon your changes. This is super useful for both simple and complex edits across multiple files.</p></li>
+<li><p><code>/</code> to search within the current buffer. Use <code>n</code> and <code>N</code> to go to next and previous matches. (<code>?</code> to search backwards.)</p></li>
+</ul>
+<h2 id="moving-to-text">Moving To Text</h2>
+<p>If you can see text on the screen and want to move to it there are a number of ways to quickly get there.</p>
+<ul>
+<li><p><code>s</code> and type two characters to jump forward to the nearest match, and <code>S</code> to jump backwards. Type <code>,</code> to cycle to matches earlier in the buffer and <code>;</code> to cycle through matches later in the buffer. By default these functions only jump to a match on the current line, but if you cycle with <code>,</code> and <code>;</code> they’ll jump around the whole buffer. This is <a href="https://github.com/hlissner/evil-snipe">evil-snipe</a>, which has an amazing cover graphic / logo.</p></li>
+<li><p><code>gs SPC</code>, start typing the word you’re looking at. You’ll either jump directly there or be given a quick key to press to disambiguate the phrase you’ve typed. If you add <code>(setq avy-all-windows t)</code> to your <code>config.el</code> this will work across all visible windows. I love this method for quickly jumping around the screen. This uses <a href="https://github.com/abo-abo/avy">Avy</a>.</p></li>
+<li><p><code>gs</code> and wait for the popup for a million other search methods. I don’t really use them as the two options above do everything I need, but maybe I’m missing out.</p></li>
+</ul>
+<p>If the things I want to jump to is fairly close to where the cursor is I’ll use evil-snipe (<code>s</code> and <code>S</code>). If it’s far away or in another window I’ll use Avy (<code>gs SPC</code>). Both can be used to create text objects. Imagine we have the text</p>
+<pre><code>Just some example text</code></pre>
+<p>with the cursor at the <code>J</code> and we want to select <code>Just some example</code>. We could use <code>v3e</code> but we have to count the number of words (and remember the difference between <code>e</code> and <code>w</code>). Instead we could type <code>vsle</code>. The <code>s</code> uses evil-snipe, and <code>le</code> is the two characters we’re sniping. We could also use <code>vgsSPCle</code> to use Avy (and we’d then have to move the cursor one character right).</p>
+<p>There is a bit of complexity using evil-snipe. It’s bound to <code>s</code> for visual selection, but other commands (e.g. yank or <code>y</code>) bind <code>s</code> to <a href="https://github.com/emacs-evil/evil-surround">evil-surround</a>. In these cases evil-snipe is bound to <code>z</code> (or <code>Z</code> to snipe backwards). If we don’t want include the letters we’re sniping in the text object we can use <code>x</code> (or <code>X</code> for backwards sniping).</p>
+<h2 id="narrowing-and-widening-regions">Narrowing and Widening Regions</h2>
+<p>It can be useful to restrict a buffer to a selection of text, called narrowing in Emacs. This is particularly useful with multiple cursors (see below). To narrow to the current selection use <code>SPC rn</code> and use <code>SPC rw</code> to perform the reverse, called widening. Narrowing to the current function, with <code>SPC rf</code>, is also useful.</p>
+<h2 id="multiple-cursors">Multiple Cursors</h2>
+<p>Multiple cursors allow you to edit multiple things at a time. Doom provides two implementations of multiple cursors, <a href="https://github.com/hlissner/evil-multiedit">evil-multiedit</a> and <a href="https://github.com/gabesoft/evil-mc">evil-mc</a>. I find evil-multiedit easier to use, but it is less powerful.</p>
+<p>There are two ways to start editing with evil-multiedit:</p>
+<ul>
+<li><p>select one example of the things you want to edit and press <code>R</code> to select all the rest in the current buffer (perhaps narrowing first); or</p></li>
+<li><p>move the cursor over one example of the word you want to edit and then repeatedly press <code>M-d</code> and <code>M-D</code> to select next or previous examples respectively.</p></li>
+</ul>
+<p>Having selected some regions you can move between them using <code>C-n</code> (next) and <code>C-p</code> (previous). Pressing <code>RET</code> on a region will remove it from the selection, so by using these commands you can choose arbitrary regions to include.</p>
+<p>Once you have selected the regions, edits made to one region will be reflected in all the others. The majority of evil commands work with evil-multiedit.</p>
+<p>Finally use the usual cancel key (<code>ESC</code> or <code>C-[</code>) to exit out of evil-multiedit.</p>
+<p>The other multiple cursor implementation, evil-mc, is a bit more flexible but harder to use. There are more options for creating multiple cursors with evil-mc:</p>
+<ul>
+<li><code>gzm</code> to create cursors at all matches for the word at point (possibly narrowing the buffer first);</li>
+<li><code>gzd</code> to create a cursor at point and move to the next match (and <code>gzD</code> to create and move to the previous match);</li>
+<li><code>gzj</code> to create a cursor at point and move to the next line (and <code>gzk</code> to create and move to the previous line); or</li>
+<li><code>gzz</code> to create a cursor at point.</li>
+</ul>
+<p>Cursors will mirror the commands you enter at the “real” cursor. You can temporarily turn off multiple cursors with <code>gzt</code>. This is automatically done if you create a cursor at point with <code>gzz</code>. Start the cursors again with the same key combo, <code>gzt</code>.</p>
+<p>Most commands work with evil-mc but a few commands I commonly use do not:</p>
+<ul>
+<li><code>DEL</code> (backspace) in insert mode will not be repeated across all cursors in some modes; and</li>
+<li><code>ysiw</code> doesn’t work across all cursors in all the modes I tried (though <code>ciw</code>, for example, does).</li>
+</ul>
+<p>If the cursors get out of sync undoing a few commands usually sorts things out.</p>
+<p>When you’ve finished with multiple cursors press <code>gzu</code> to remove them all.</p>
+<h2 id="undoing-and-redoing">Undoing and Redoing</h2>
+<p><em>TODO</em></p>
+<p><code>u</code> is undo, but this uses the <code>undo-tree</code> system which is a bit more complicated that you might be used to. <code>C-r</code> and <code>M-_</code> is redo <code>C-x u</code> shows the undo tree.</p>
+<h2 id="navigating-source-code">Navigating Source Code</h2>
+<p><em>TODO</em></p>
+<p><code>gd</code> or <code>SPC cd</code> to go to the definition of the symbol at point. <code>gD</code> or <code>SPC cD</code> to list references to the symbol at point. <code>K</code> to lookup documentation for the symbol at point. Uses Dash docsets if you have them installed and the major mode is correctly configured.</p>
+<h2 id="navigating-compilation-output">Navigating Compilation Output</h2>
+<p><em>TODO</em></p>
+<p><code>SPC p c</code> or <code>M-b</code> to compile (build) <code>]e</code> and <code>[e</code> for next and previous flycheck error, respectively <code>SPC c x</code> to list current errors (from flycheck)</p>
+<h2 id="miscellaneous">Miscellaneous</h2>
+<ul>
+<li><code>gcc</code> to comment or uncomment the current line or selection;</li>
+<li><code>SPC oA</code> for the Org agenda;</li>
+<li><code>SPC x</code> for a temporary buffer for random notes;</li>
+<li>to change text size in the current buffer: <code>M-=</code> to increase, <code>M--</code> to decrease, and <code>M-+</code> to reset it.</li>
+</ul>
+<h2 id="learning-more-about-doom">Learning More About Doom</h2>
+<p>I learned most of what I know about Doom by reading through the <a href="https://github.com/hlissner/doom-emacs/blob/develop/modules/config/default/+evil-bindings.el">default keybindings</a> and looking up commands I didn’t recognise. It’s easy to experiment in a scratch buffer to figure out what a command does.</p>
+<p>Learning Doom has been a gradual process for me. I didn’t adopt all the above at once! In fact many things I only figured out when I came to write this document.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

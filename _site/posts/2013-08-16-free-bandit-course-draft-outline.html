@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: The Free Bandit Course &mdash; Draft Outline</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>The Free Bandit Course &mdash; Draft Outline</h1>
+        
+            <p><small>August 16, 2013</small></p>
+        
+    </section>
+    <section>
+        <p>In a <a href="%7B%%20post_url%202013-08-05-why-you-should-know-about-bandit-algorithms%20%%7D">previous post</a> I argued for the usefulness of bandit algorithms to marketers and data scientists. In short, they allow us to perform faster A/B testing, to personalise offers to customers, and to recommend rapidly changing content. I also mentioned I’m running a free course on bandit algorithms. It is starting next week, and I’ve been busy working on the course material. I now have a clearer idea of the course outline and how the material will be delivered, which I’d like to share with you.</p>
+<p>(If you’re interested in the course and just want to sign up, scroll to the bottom of the page.)</p>
+<h2 id="goal">Goal</h2>
+<p>The overarching goal is to describe the major themes and results in the world of bandit algorithms, as they apply to practitioners. This means emphasising concepts, and deemphasising the mathematics. I’ll provide lots of links if you want to get your proof on. Most of my examples will be drawn from the Internet world, because that is what I’m most familiar with and what I imagine is more relevant to you.</p>
+<h2 id="course-outline">Course Outline</h2>
+<p>We’ll start by looking at what problem a bandit algorithm is trying to solve. We’ll see there is a family of related problems that are all called bandit problems. We’ll discuss where we might encounter these problems in practice, focusing on Internet applications.</p>
+<p>Once we’ve established what a bandit algorithm is, we’ll look at a really simple example of one. Analysing the behaviour of this algorithm leads us to the core problem of bandit algorithms, which is balancing exploration and exploitation. We’ll discuss our first workable algorithm, e-greedy, which provides a very simple way to balance these two concerns.</p>
+<p>My current plan is discuss hypothesis testing – the technology behind classic A/B tests – in a reasonable amount of depth. We’ll cover type I and II errors, p-values, power, and sample size, and the exact meaning of statistical significance. This might be too much – what do you think? We’ll then look at the bandit analogue of A/B testing, known as “best arm identification,”&quot; and see how modern algorithms can improve on hypothesis testing.</p>
+<p>From here we can explore some of the practical issues with running bandit algorithms: choosing a goal, dealing with delayed rewards, and investigating the effect of changing conversion rates on the algorithms.</p>
+<p>Having looked at the best arm identification problem we then turn to the “regret minimization” problem, which is the best known bandit problem. We’ll look at algorithms for this and examine how they compare to the best arm identification algorithms we looked at above.</p>
+<p>I’m not 100% sure on the A/B testing to regret minimization sequence, so I might rearrange this a bit.</p>
+<p>This covers all the basic material, but there are two other areas I’d like to look at.</p>
+<p>The first is handling conversion rates that are changing very quickly. This is the case in, for instance, news stories. The news of the hour has a short shelf life (about an hour, I hear.) How can we adapt bandit algorithms to deal with this? We will look relatively quickly at a few approaches.</p>
+<p>Then we’ll turn to the topic of personalisation. Here we assume we have a profile for our visitors, and we want to use this in our algorithm to improve suggestions. We’ll discuss some of the ways to do this, without getting too deep into the issues of machine learning.</p>
+<p>That’s everything I intend to cover. There are lots of topics I’ve left off: combinatorial bandits, linear bandits, and more. I feel the above are the core topics, and also what I know the most about (which helps).</p>
+<h2 id="sign-up">Sign Up</h2>
+<p>If you’re interested in the course, sign up below. It’s free and starting soon. Hope to see you there!</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

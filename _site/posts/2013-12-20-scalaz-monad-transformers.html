@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Scalaz Monad Transformers</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Scalaz Monad Transformers</h1>
+        
+            <p><small>December 20, 2013</small></p>
+        
+    </section>
+    <section>
+        <p>Monad transformers allow us to stack monads. Say we have a monad, like <code>Option</code>, and we want to wrap it in another monad, like <code>\/</code>, in a convenient way (where convenient is to be defined shortly). Monad transformers let us do this. Scalaz comes with lots of monad transformers. Let’s see how to use them and the benefits they supply.</p>
+<h2 id="example">Example</h2>
+<p>Let’s motivate monad transformers with the above example. We have an operation that may or may not generate a value. Something like getting a value from a database. Thus we model it as an <code>Option</code>. This operation may also encounter various other errors. To keep things simple we’ll encode the errors as <code>String</code>s. So we basically have three different types of result:</p>
+<ol type="1">
+<li>value found;</li>
+<li>value not found; or</li>
+<li>error occurred.</li>
+</ol>
+<p>We can model this as <code>type Result[+A] = String \/ Option[A]</code>. (Note that <code>\/</code> is Scalaz’s version of <code>Either</code>.) We can construct values of this type by hand:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">import</span> scalaz._</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">import</span> Scalaz._</a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">type</span> Result[+A] = String \/ Option[A]</a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">val</span> result: Result[Int] = <span class="fu">some</span>(<span class="dv">42</span>).<span class="fu">right</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// result: Result[Int] = \/-(Some(42))</span></a></code></pre></div>
+<p>To use <code>result</code> we must unwrap it twice, which is tedious:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">val</span> transformed =</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb2-3" title="3">    option &lt;- result</a>
+<a class="sourceLine" id="cb2-4" title="4">  } <span class="kw">yield</span> {</a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb2-6" title="6">      value &lt;- option</a>
+<a class="sourceLine" id="cb2-7" title="7">    } <span class="kw">yield</span> value.<span class="fu">toString</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  }</a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// transformed: scalaz.\/[String,Option[String]] = \/-(Some(42))</span></a></code></pre></div>
+<p>This is fairly horrible. The desugared version is actually a bit clearer:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">val</span> transformed = result map { _ map { _.<span class="fu">toString</span> } }</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">// transformed: scalaz.\/[String,Option[String]] = \/-(Some(42))</span></a></code></pre></div>
+<p>Still, can’t we avoid this nesting? It seems like we should be able to chain calls to <code>flatMap</code> and friends and just have it do the right thing. With monad transformers we can. Here’s the transformed version.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">type</span> Error[+A] = \/[String, A]</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">type</span> Result[+A] = OptionT[Error, A]</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw">val</span> result: Result[Int] = <span class="fl">42.</span>point[Result]</a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">val</span> transformed =</a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">    value &lt;- result</a>
+<a class="sourceLine" id="cb4-8" title="8">  } <span class="kw">yield</span> value.<span class="fu">toString</span></a></code></pre></div>
+<p>There are three changes:</p>
+<ol type="1">
+<li>the type definitions;</li>
+<li>the way we construct values of these new types; and</li>
+<li>the removal of one layer of nesting when we use the monad.</li>
+</ol>
+<p>Let’s go through these in order.</p>
+<h2 id="type-definitions">Type Definitions</h2>
+<p>The type <code>OptionT[M[_], A]</code> is a monad transformer that constructs an <code>Option[A]</code> inside the monad <code>M</code>. So the first important point is the monad transformers are built from the inside out.</p>
+<p>Note that I define a type alias <code>Error</code> for the monad we wrap around the <code>Option</code>. Why is this the case? It has to do with type inference. <code>OptionT</code> expects <code>M</code> to have a type (technically, a kind) like <code>M[A]</code>. This is, <code>M</code> should have a single type parameter. <code>\/</code> has two type parameters, the left and the right types. We have to tell Scala has to get from two type parameters to one. One option is to use a type lambda:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">type</span> Result[A] = OptionT[{ <span class="kw">type</span> l[X] = \/[String, X] }#l, A]</a></code></pre></div>
+<p>Clearly this horror should not be inflicted on the world. A saner option is to just define the type as I have done above with <code>Error</code>.</p>
+<h2 id="constructing-values">Constructing Values</h2>
+<p>Constructing values of <code>Result</code> can be done in a variety of ways, depending on what we want to achieve.</p>
+<p>If we want to construct a value in the default way, we can use the <code>point</code> method like so:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">val</span> result: Result[Int] = <span class="fl">42.</span>point[Result]</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">// result: Result[Int] = OptionT(\/-(Some(42)))</span></a></code></pre></div>
+<p>Note that this wraps our value in <code>Some</code> and a right <code>\/</code>.</p>
+<p>What if we want, say, a <code>None</code> for the option. We can’t use <code>point</code> as we have above:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb7-1" title="1">None.<span class="fu">point</span>[Result]</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="co">// Result[None.type] = OptionT(\/-(Some(None)))</span></a></code></pre></div>
+<p>The solution is to use the <code>OptionT</code> constructor:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">val</span> result: Result[Int] = <span class="fu">OptionT</span>(none[Int].<span class="fu">point</span>[Error])</a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="co">// result: Result[Int] = OptionT(\/-(None))</span></a></code></pre></div>
+<p>Here I’ve used Scalaz’s <code>none</code>, and <code>point</code> on <code>Error</code> to construct the value of the correct type, before wrapping it in an <code>OptionT</code>.</p>
+<p>If we want to create a left <code>\/</code> we go about it the same way:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">val</span> result: Result[Int] = <span class="fu">OptionT</span>(<span class="st">&quot;Error message&quot;</span>.<span class="fu">left</span> : Error[Option[Int]])</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="co">// result: Result[Int] = OptionT(-\/(Error message))</span></a></code></pre></div>
+<p>Note the type declaration, needed to assist type inference.</p>
+<h2 id="using-the-monad">Using the Monad</h2>
+<p>When we use our new monad <code>map</code> and <code>flatMap</code> do multiple levels of unwrapping for us.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">val</span> result = <span class="fl">42.</span>point[Result]</a>
+<a class="sourceLine" id="cb10-2" title="2">result.<span class="fu">map</span>(x =&gt; x + <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="co">// scalaz.OptionT[Error,Int] = OptionT(\/-(Some(44)))</span></a>
+<a class="sourceLine" id="cb10-4" title="4">result.<span class="fu">flatMap</span>(_ =&gt; <span class="st">&quot;Yeah!&quot;</span>.<span class="fu">point</span>[Result])</a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="co">// scalaz.OptionT[Error,java.lang.String] = OptionT(\/-(Some(Yeah!)))</span></a></code></pre></div>
+<p>Of course we might not want to unwrap all the layers of our monad. We can manually unwrap our data if need be. All monad transformers in Scalaz return their data if you call the <code>run</code> method. With this we can do whatever we want, such as folding over the <code>\/</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">val</span> result = <span class="fl">42.</span>point[Result]</a>
+<a class="sourceLine" id="cb11-2" title="2">result.<span class="fu">run</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">// Error[Option[Int]] = \/-(Some(42))</span></a>
+<a class="sourceLine" id="cb11-4" title="4">result.<span class="fu">run</span>.<span class="fu">fold</span>(</a>
+<a class="sourceLine" id="cb11-5" title="5">  l = err =&gt; <span class="st">&quot;So broken&quot;</span>,</a>
+<a class="sourceLine" id="cb11-6" title="6">  r = ok  =&gt; <span class="st">&quot;It worked!&quot;</span></a>
+<a class="sourceLine" id="cb11-7" title="7">)</a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="co">// java.lang.String = It worked!</span></a></code></pre></div>
+<p>What about some utility functions to help with this? There are no such methods defined for all monad transformers, that I know of, but in the particular case of <code>OptionT</code> we can use the <code>flatMapF</code> method. For a type <code>Option[F[_], A]</code> the normal <code>flatMap</code> has type</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb12-1" title="1">flatMap[B](f: A =&gt; OptionT[F, B]): OptionT[F, B]</a></code></pre></div>
+<p>whereas <code>flatMapF</code> has type</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb13-1" title="1">flatMapF[B](f: A =&gt; F[B]): OptionT[F, B]</a></code></pre></div>
+<p>(Note I removed an implicit parameter from the method signatures above.)</p>
+<p>For our <code>Result[Int]</code> type this means the parameter <code>f</code> to <code>flatMap</code> should have type <code>Int =&gt; \/[String, B]</code>. Note that <code>B</code> is <em>not</em> wrapped in an <code>Option</code>; <code>flatMapF</code> will do this for us. We also don’t have to wrap our result in <code>OptionT</code>.</p>
+<p>Here is an example:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb14-1" title="1"><span class="co">// this is a fairly silly function, but it serves as an example</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="kw">def</span> <span class="fu">positive</span>(in: Int): \/[String, Boolean] =</a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="kw">if</span>(in &gt; <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb14-4" title="4">    <span class="kw">true</span>.<span class="fu">right</span></a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="kw">else</span></a>
+<a class="sourceLine" id="cb14-6" title="6">    <span class="st">&quot;Not positive&quot;</span>.<span class="fu">left</span></a>
+<a class="sourceLine" id="cb14-7" title="7"></a>
+<a class="sourceLine" id="cb14-8" title="8"><span class="kw">val</span> good = <span class="fl">42.</span>point[Result]</a>
+<a class="sourceLine" id="cb14-9" title="9">good flatMapF positive</a>
+<a class="sourceLine" id="cb14-10" title="10"><span class="co">// scalaz.OptionT[Error,Boolean] = OptionT(\/-(Some(true)))</span></a>
+<a class="sourceLine" id="cb14-11" title="11"></a>
+<a class="sourceLine" id="cb14-12" title="12"><span class="kw">val</span> bad = <span class="fl">-3.</span>point[Result]</a>
+<a class="sourceLine" id="cb14-13" title="13">bad flatMapF positive</a>
+<a class="sourceLine" id="cb14-14" title="14"><span class="co">// scalaz.OptionT[Error,Boolean] = OptionT(-\/(Not positive))</span></a></code></pre></div>
+<h1 id="conclusion">Conclusion</h1>
+<p>Once you start using monads it’s quite easy to find yourself using a lot of them. For example, if you do asynchronous programming in Scala you are likely using <code>Future</code> which is a monad<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. Debugging futures can be hard. Futures don’t give good stack traces due to the continual context switches, and logs are hard to interpret as output from many threads is mixed together. An alternative is to keep an in-memory log with each computation running in a <code>Future</code>, and output this log when the <code>Future</code> finishes. This can be accomplished using the <code>Writer</code> monad. As soon as you do this you have a stack of monads, and monad transformers become useful. Once you know what to look for you’ll find them everywhere!</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>See the <a href="https://github.com/typelevel/scalaz-contrib">scalaz-contrib</a> package for <code>Monad</code> instances for <code>scala.concurrent.Future</code>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

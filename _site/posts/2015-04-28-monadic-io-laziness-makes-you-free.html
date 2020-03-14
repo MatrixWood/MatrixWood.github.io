@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Monadic IO: Laziness Makes You Free</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Monadic IO: Laziness Makes You Free</h1>
+        
+            <p><small>April 28, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>Understanding monads is a puzzle with many parts. Understanding the monad interface was easy enough for me, as I’d been programming in functional languages for a while when I first started exploring them, but for a long time I didn’t understand how they made IO operations pure. The answer is to add an extra wrinkle, usually glossed over in Haskell oriented sources, by making all IO actions lazy. It this article we’re going to explore how this works and undercover some surprising relationships to the free monad, which we have been covering in <a href="%7B%%20post_url%202015-04-13-free-monads-are-simple%20%%7D">recent</a> <a href="%7B%%20post_url%202015-04-23-deriving-the-free-monad%20%%7D">posts</a>.</p>
+<!--more-->
+<p>We start with a very simple Scala program.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">println</span>(<span class="st">&quot;Monads are the best!&quot;</span>)</a></code></pre></div>
+<p>We know that <code>println</code> is impure, meaning it breaks substitution. We can’t substitute a call to <code>println</code> with the result of that call (<code>()</code>) without changing the semantics of our program. This is in contrast to pure programs, such as <code>1 + 2 + 3</code>, which we can freely substitute.</p>
+<p>Concretely</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="fu">println</span>(<span class="st">&quot;Monads are the best!&quot;</span>)</a></code></pre></div>
+<p>is not equivalent to</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1">()</a></code></pre></div>
+<p>whereas</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="dv">1</span> + <span class="dv">2</span> + <span class="dv">3</span></a></code></pre></div>
+<p>is equivalent to</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="dv">6</span></a></code></pre></div>
+<p>Our goal is to implement <code>println</code> in such a way that its return value is something that does allow for substitution. I’ve already hinted we need a monad. But how exactly should this monad be implemented? The solution comes back to the idea we talked about when <a href="%7B%%20post_url%202015-04-13-free-monads-are-simple%20%%7D">introducing the free monad</a>: separate the representation and the interpreter.</p>
+<p>What we’re going to do is make <code>println</code> return an action that, when we run it, really does the printing. An implementation like this will do:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">object</span> Pure {</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">def</span> <span class="fu">println</span>(msg: String) =</a>
+<a class="sourceLine" id="cb6-3" title="3">    () =&gt; Predef.<span class="fu">println</span>(msg)</a>
+<a class="sourceLine" id="cb6-4" title="4">}</a></code></pre></div>
+<p><code>Predef.println</code> is the “real” <code>println</code> that prints to the console. Our implementation, within <code>Pure</code>, returns a function of no arguments (a thunk) that calls the real <code>println</code> when applied. We can freely substitute calls to <code>Pure.println</code> with the result of calling <code>Pure.println</code>. In other words</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb7-1" title="1">Pure.<span class="fu">println</span>(<span class="st">&quot;Monads are the best!&quot;</span>)</a></code></pre></div>
+<p>is equivalent to</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1">() =&gt; Predef.<span class="fu">println</span>(<span class="st">&quot;Monads are the best!&quot;</span>)</a></code></pre></div>
+<p>We have an implementation that maintains substitution, which is a step forward. But to make this implementation useful we need two more things:</p>
+<ul>
+<li>we must somehow tie together our uses of <code>println</code>, so we don’t just have thunks randomly littered throughout our code; and</li>
+<li>at some point we must actually run these thunks to print stuff out.</li>
+</ul>
+<p>We can solve both these problems by defining a monadic API for IO actions. This involves changing the representation from a function to a data type with an implementation of <code>flatMap</code> and a method <code>run</code>. I recommend undertaking this exercise yourself. It’s a bit more subtle than I thought it would be; the main issue is defining <code>flatMap</code> without running actions prematurely.</p>
+<p>Here’s an example to get you started. Your code <em>should not</em> print anything until <code>Example.run</code> is called.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">object</span> Example {</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">val</span> io =</a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb9-4" title="4">      _ &lt;- Pure.<span class="fu">println</span>(<span class="st">&quot;Starting work now.&quot;</span>)</a>
+<a class="sourceLine" id="cb9-5" title="5">      <span class="co">// Do some pure work</span></a>
+<a class="sourceLine" id="cb9-6" title="6">      x = <span class="dv">1</span> + <span class="dv">2</span> + <span class="dv">3</span></a>
+<a class="sourceLine" id="cb9-7" title="7">      _ &lt;- Pure.<span class="fu">println</span>(<span class="st">&quot;All done. Home time.&quot;</span>)</a>
+<a class="sourceLine" id="cb9-8" title="8">    } <span class="kw">yield</span> x</a>
+<a class="sourceLine" id="cb9-9" title="9"></a>
+<a class="sourceLine" id="cb9-10" title="10">  <span class="kw">def</span> run =</a>
+<a class="sourceLine" id="cb9-11" title="11">    io.<span class="fu">run</span></a>
+<a class="sourceLine" id="cb9-12" title="12">}</a></code></pre></div>
+<p>Here’s my solution:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">object</span> Pure {</a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="kw">sealed</span> <span class="kw">trait</span> IO[A] {</a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="kw">def</span> flatMap[B](f: A =&gt; IO[B]): IO[B] =</a>
+<a class="sourceLine" id="cb10-4" title="4">      <span class="fu">Suspend</span>(() =&gt; <span class="fu">f</span>(<span class="kw">this</span>.<span class="fu">run</span>))</a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6">    <span class="kw">def</span> map[B](f: A =&gt; B): IO[B] =</a>
+<a class="sourceLine" id="cb10-7" title="7">      <span class="fu">Return</span>(() =&gt; <span class="fu">f</span>(<span class="kw">this</span>.<span class="fu">run</span>))</a>
+<a class="sourceLine" id="cb10-8" title="8"></a>
+<a class="sourceLine" id="cb10-9" title="9">    <span class="kw">def</span> run: A =</a>
+<a class="sourceLine" id="cb10-10" title="10">      <span class="kw">this</span> <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb10-11" title="11">        <span class="kw">case</span> <span class="fu">Return</span>(a) =&gt; <span class="fu">a</span>()</a>
+<a class="sourceLine" id="cb10-12" title="12">        <span class="kw">case</span> <span class="fu">Suspend</span>(s) =&gt; <span class="fu">s</span>().<span class="fu">run</span></a>
+<a class="sourceLine" id="cb10-13" title="13">      }</a>
+<a class="sourceLine" id="cb10-14" title="14">  }</a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[A](a: () =&gt; A) <span class="kw">extends</span> IO[A] </a>
+<a class="sourceLine" id="cb10-16" title="16">  <span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[A](s: () =&gt; IO[A]) <span class="kw">extends</span> IO[A]</a>
+<a class="sourceLine" id="cb10-17" title="17"></a>
+<a class="sourceLine" id="cb10-18" title="18">  <span class="kw">object</span> IO {</a>
+<a class="sourceLine" id="cb10-19" title="19">    <span class="kw">def</span> point[A](a: =&gt; A): IO[A] =</a>
+<a class="sourceLine" id="cb10-20" title="20">      <span class="fu">Return</span>(() =&gt; a)</a>
+<a class="sourceLine" id="cb10-21" title="21">  } </a>
+<a class="sourceLine" id="cb10-22" title="22"></a>
+<a class="sourceLine" id="cb10-23" title="23">  <span class="kw">def</span> <span class="fu">println</span>(msg: String): IO[Unit] =</a>
+<a class="sourceLine" id="cb10-24" title="24">    IO.<span class="fu">point</span>(Predef.<span class="fu">println</span>(msg))</a>
+<a class="sourceLine" id="cb10-25" title="25">}</a></code></pre></div>
+<p>The key problem, as I mentioned above, is implementing <code>flatMap</code>. With an object of type <code>IO[A]</code> and a function of type <code>A =&gt; IO[B]</code>, it seems that we must run the <code>IO[A]</code> to get the <code>A</code> to apply to the function. However, once we run actions we break substitution. The solution is to introduce a separate case to our algebraic data type to represent a call to <code>flatMap</code> without actually running anything. This is the <code>Suspend</code> case in my implementation.</p>
+<p>Avid readers of the blog will recognise that this is almost exactly the algebraic data type we used when <a href="%7B%%20post_url%202015-04-23-deriving-the-free-monad%20%%7D">deriving the free monad</a>! That’s no accident. The free monad is all about <a href="%7B%%20post_url%202015-04-13-free-monads-are-simple%20%%7D">separating the structure of the computation from the interpreter that gives it meaning</a>. <em>We are doing exactly the same thing here.</em> The structure of the computation is represented by the algebraic data type, and we give meaning to the structure when we <code>run</code> it.</p>
+<p>This is a fairly simple example, but I found a surprising number of lessons in it.</p>
+<p>The first is the trick of making IO pure by <em>not doing any IO</em> (until we <code>run</code> the code). This trick is very useful. It’s the same implementation technique used in Scalaz’s <a href="http://docs.typelevel.org/api/scalaz/nightly/#scalaz.concurrent.Task"><code>Task</code></a> (a better alternative to <code>Future</code>) and in the free monad.</p>
+<p>We can’t maintain substitution after we run our IO actions. The way Haskell handles the <code>IO</code> monad is to only allow the runtime to run it (with the exception, I believe, of <code>unsafePerformIO</code>). Therefore all programs are pure from the programmer’s point of view. In Scala we just have to be careful to separate the two phases so we don’t try to use substitution of actions after they’ve been run.</p>
+<p>The idea of representing actions as data is very general. I’ve explored this point in depth in the <a href="%7B%%20post_url%202015-04-13-free-monads-are-simple%20%%7D">prior post</a> introducing the free monad. We’ve seen another example here. We’re also seeing the same implementation pattern come up again. So as a general point, if you find yourself implementing some monad variant and you don’t want to use the free monad, you probably need an algebraic data type like the one we just saw.</p>
+<p>In some sense the representation of monads in terms of <code>map</code> and <code>join</code> (described <a href="%7B%%20post_url%202015-04-13-free-monads-are-simple%20%%7D">previously</a>) is more primitive than the one in terms of <code>flatMap</code>. With this representation we build nested structured like <code>IO[IO[IO[C]]]</code> through repeated application of <code>map</code>, and we then reduce these back to just, say, <code>IO[C]</code> using <code>join</code>. We can view <code>map</code> as sequencing actions to perform, and <code>join</code> as performing them.</p>
+<p>Finally, we can derive a useful lesson about monad composition in the free monad. If you know about monad transformers, you’ll know they are one approach to composing monads. It’s fairly common to define a “monad stack” that is used consistently throughout an application. For example, an application I’m currently writing uses</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">type</span> Result[Error, Success] = EitherT[Task, Error, Success]</a></code></pre></div>
+<p>The free monad offers another approach to monad composition, via the <a href="http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf">a la carte</a> technique. The question then becomes, if we use the free monad should we raise all our monads into it, in the same way we do with monad transformers? So far I have not done this. My approach has been to put IO actions into the free monad but leave other monads (e.g. <code>Option</code> and <code>\/</code>) out of it. This means occasionally seeing nested <code>for</code> comprehensions but I find it simpler and more performant to work this way. One caveat: I haven’t written a great deal of code using the free monad so my opinion might change.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

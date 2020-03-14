@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Late Binding and Overloading in Scala</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Late Binding and Overloading in Scala</h1>
+        
+            <p><small>November  4, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>In a recent training course I was asked if Scala supports static or dynamic polymorphism. These are not terms I had heard before, so I had some homework to do. A bit of research showed this terminology refers to the same thing as early and late binding, which I’m more familiar with. So, here we have a quick discussion of early binding (or static polymorphism) and late binding (or dynamic polymorphism), and how it relates to Scala’s polymorphic methods and overloading.</p>
+<!--more-->
+<h3 id="types-and-tags">Types and Tags</h3>
+<p>For this discussion we’ll need to be precise about our terminology surrounding types. We’re going to use the term <em>type</em> in the way used in type theory. It refers to a constraint on a value known at <em>compile-time</em>. In this view types only exist at compile-time.</p>
+<p>Programmers sometimes refer to run-time or dynamic types. This is information available at runtime about a value. We’re going to use the term <em>tags</em> to refer to these. The tag may sometimes contain the same information as a type, but sometimes it will not. For example, in the following code the type is <code>Option[Int]</code> but the tag is <code>Some</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">val</span> anOption: Option[Int] = Some(<span class="dv">1</span>)</a></code></pre></div>
+<h3 id="early-and-late-binding">Early and Late Binding</h3>
+<p>Given class definitions like</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">class</span> <span class="fu">Foo</span>() {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">def</span> doIt: String =</a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="st">&quot;Foo&quot;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">}</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">class</span> <span class="fu">Bar</span>() <span class="kw">extends</span> <span class="fu">Foo</span>() {</a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">override</span> <span class="kw">def</span> doIt: String =</a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="st">&quot;Bar&quot;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">}</a></code></pre></div>
+<p>what method is chosen when we write</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">val</span> foo: Foo = <span class="kw">new</span> <span class="fu">Bar</span>()</a>
+<a class="sourceLine" id="cb3-2" title="2">foo.<span class="fu">doIt</span></a></code></pre></div>
+<p>There are two possibilities:</p>
+<ul>
+<li>the type of the value (in this case <code>Foo</code>) is used to choose the method so <code>foo.doIt</code> evaluates to <code>&quot;Foo&quot;</code>; or</li>
+<li>the tag of the value (in this case <code>Bar</code>) is used to choose the method so <code>foo.doIt</code> evaluates to <code>&quot;Bar&quot;</code>.</li>
+</ul>
+<p>The former choice is early binding (static polymorphism), while the latter is late binding (dynamic polymorphism). Scala, like Java and most other OO languages, uses late binding. The above code will evaluate to <code>&quot;Bar&quot;</code>.</p>
+<h3 id="overloading">Overloading</h3>
+<p>We’ve seen that the tag of the method receiver (the object on which we call the method) is involved in determining which method is used. We might also ask if the method parameters are also involved in making that decision. Take the following code.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">class</span> <span class="fu">Foo</span>() {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">def</span> <span class="fu">doEet</span>(foo: Foo): String =</a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="st">&quot;FooFoo&quot;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">def</span> <span class="fu">doEet</span>(foo: Bar): String =</a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="st">&quot;FooBar&quot;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">}</a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">class</span> <span class="fu">Bar</span>() <span class="kw">extends</span> <span class="fu">Foo</span>() {</a>
+<a class="sourceLine" id="cb4-10" title="10">}</a></code></pre></div>
+<p>Here we have two overloaded variants of <code>doEet</code>. What is the result of the following expressions?</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">val</span> aFoo: Foo = <span class="kw">new</span> <span class="fu">Foo</span>()</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">val</span> foo: Foo = <span class="kw">new</span> <span class="fu">Bar</span>()</a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">val</span> bar: Bar = <span class="kw">new</span> <span class="fu">Bar</span>()</a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">aFoo.<span class="fu">doEet</span>(foo)</a>
+<a class="sourceLine" id="cb5-7" title="7">aFoo.<span class="fu">doEet</span>(bar)</a></code></pre></div>
+<p>The expression <code>aFoo.doEet(foo)</code> evaluates to <code>&quot;FooFoo&quot;</code>, while <code>aFoo.doEet(bar)</code> evaluates to <code>&quot;FooBar&quot;</code>. This shows that the type, not the tag, of method parameters is used to choose between overloaded methods.</p>
+<p>Therefore we can say that Scala has late binding for the method receiver (the object on which we call the method) but early binding for method parameters (to resolve overloading).</p>
+<h3 id="multiple-dispatch">Multiple Dispatch</h3>
+<p>It’s worth noting that some languages use the tags of all method parameters to choose between implementations. This is known as multiple dispatch. The choice made in Scala, where only a single tag is used, is known as single dispatch.</p>
+<p>Multiple dispatch is very uncommon. It has a few issues:</p>
+<ul>
+<li>there can be multiple methods that are equally specific for a given set of method parameters;</li>
+<li>it’s difficult to reconcile with modularity; and</li>
+<li>it’s difficult to efficiently implement.</li>
+</ul>
+<p>Multiple dispatch is mainly found in the Lisp family of languages. CLOS, the standard object system for Common Lisp, features multiple dispatch, for example.</p>
+<h3 id="goofiness">Goofiness</h3>
+<p>It’s possible to run into confusing situations using overloading. Take the following code for example.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">object</span> Foo {</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">def</span> <span class="fu">add</span>(numbers: List[Int]): Double =</a>
+<a class="sourceLine" id="cb6-3" title="3">    numbers.<span class="fu">foldLeft</span>(<span class="fl">0.0</span>){ (elt, accum) =&gt; elt.<span class="fu">toDouble</span> + accum }</a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">def</span> <span class="fu">add</span>(numbers: List[Double]): Double =</a>
+<a class="sourceLine" id="cb6-6" title="6">    numbers.<span class="fu">foldLeft</span>(<span class="fl">0.0</span>){ (elt, accum) =&gt; elt + accum }</a>
+<a class="sourceLine" id="cb6-7" title="7">}</a></code></pre></div>
+<p>It seems simple but it doesn’t compile, failing with an error</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="ex">error</span>: double definition:</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="ex">def</span> add(numbers: List[Int])<span class="bu">:</span> Double at line 2 and</a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="ex">def</span> add(numbers: List[Double])<span class="bu">:</span> Double at line 5</a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="ex">have</span> same type after erasure: (numbers: List)<span class="ex">Double</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="ex">def</span> add(numbers: List[Double])<span class="bu">:</span> Double =</a>
+<a class="sourceLine" id="cb7-6" title="6">      ^</a></code></pre></div>
+<p>This is due to a JVM limitation around the representation of generic types. (In fact there are good arguments in favour of type erasure, but it is beside the point here.) There is no doubt Scala has its fair share of goofiness, a lot of which comes from constraints imposed by the JVM. The <a href="http://scalapuzzlers.com/">Scala Puzzlers</a> website describes many other corner cases.</p>
+<p>The good news is it’s easy to stay away from the goofiness. What we <a href="../training/courses/essential-scala/">teach</a> and what we use in our coding are a few patterns that lead to simple and comprehendable code. In the above example I’d try to represent the common features of <code>Int</code> and <code>Double</code> using a type class. This has clear semantics, stays well away from issues with overloading, and is far more flexible to boot.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

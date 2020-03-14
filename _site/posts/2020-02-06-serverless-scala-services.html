@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Noel Welsh: Building Serverless Scala Services with GraalVM Native Image</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Building Serverless Scala Services with GraalVM Native Image</h1>
+        
+            <p><small>February  6, 2020</small></p>
+        
+    </section>
+    <section>
+        <p>A recent project has involved serverless web services in Scala, which led me to investigate using GraalVM’s Native Image tool to create native executables. In this blog post I describe the steps necessary to build a native executable from a simple <a href="https://http4s.org/">http4s</a> web service. There is also <a href="https://github.com/inner-product/http4s-native-image">complete code</a> accompanying this example.</p>
+<!--more-->
+<h2 id="why-native-image">Why Native Image?</h2>
+<p>Before going into the details it’s worth going over a bit of background. <a href="https://www.graalvm.org/">GraalVM</a> is a new Java virtual machine and associated tools that brings increased performance compared to the older Hotspot VM. <a href="https://www.graalvm.org/docs/reference-manual/native-image/">Native Image</a> is one of the most interesting tools that comes with GraalVM. It compiles JVM bytecode into native executables. This promises reduced startup time and decreased memory consumption compared to running on a full JVM. This is particularly attractive for serverless computing as startup time is an issue and billing often increases with memory consumption.</p>
+<h2 id="overview-of-the-process">Overview of the Process</h2>
+<p>Building an executable with Native Image is not hard but there is a bit of setup involved the first time. The main steps are:</p>
+<ol type="1">
+<li>Install GraalVM locally (this is optional, but it is faster to test this way);</li>
+<li>Writing code (the fun part!);</li>
+<li>one-off configuration so that GraalVM can handle uses of reflection and <code>Unsafe</code>;</li>
+<li>creating a Docker image to build the executable (optional if you are developing on the same platform you’re deploying to); and</li>
+<li>creating a Docker image to deploy the executable (again, optional).</li>
+</ol>
+<p>Let’s look at each in turn.</p>
+<h2 id="installing-graalvm">Installing GraalVM</h2>
+<p>Installing GraalVM is our local computer is optional (if we go the Docker route, as we do later in this post) but advised as it is much faster to test things locally before invoking Docker. The part of GraalVM we’re interested in, <a href="https://www.graalvm.org/docs/reference-manual/native-image/">Native Image</a>, is an addon to the main distribution. You need to install GraalVM first and then use the tool it provides to add Native Image. I used <a href="https://sdkman.io/">sdkman</a> to install GraalVM, so I can run it alongside Hotspot (I need to continue to use Java 8 to build libraries I maintain.)</p>
+<p>With sdkman installed the magic to install GraalVM is</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># Show available JVMs</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ex">sdk</span> list java</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co"># Install GraalVM 19.3.1 running on JDK 11</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="ex">sdk</span> install java 19.3.1.r11-grl </a></code></pre></div>
+<p>Once you have GraalVM adding Native Image is just a matter of running</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="ex">gu</span> install native-image</a></code></pre></div>
+<p>Test everything is installed by running <code>native-image --version</code>. You should see output similar to <code>GraalVM Version 19.3.1 CE</code>.</p>
+<h2 id="writing-the-code">Writing the Code</h2>
+<p>The next step is to write the code that we’ll compile to a native executable. For my case I wrote a <a href="https://github.com/inner-product/http4s-native-image">very simple web service</a> using <a href="https://http4s.org/">http4s</a> and Scala 2.13.</p>
+<p>From this code we want to generate a JAR file that Native Image will then compile to an executable. In my case I used the <a href="https://github.com/sbt/sbt-assembly">sbt-assembly</a> sbt plugin to generate a single fat JAR. Running the <code>assembly</code> task in sbt produces a single JAR that I can pass to Native Image with the following command:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="ex">native-image</span> --verbose -jar target/scala-2.13/http4s-native-image-assembly-0.1.0-SNAPSHOT.jar ping-server</a></code></pre></div>
+<p>The <code>--verbose</code> flag is not strictly needed but I found it useful for debugging. If you try this using my code it should just work and produce an executable. If you try on your own code, however, you will likely run into some errors because Native Image does not support all the features of the JVM. In the next section I discuss the problems I encoutered and how I fixed them.</p>
+<h2 id="graalvm-configuration">GraalVM Configuration</h2>
+<p>This step is perhaps the most important. Native Image has various <a href="https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md">limitations</a> which we must work around. The lack of reflection is likely to be an issue for any sizable application. Scala code does not make much use of reflection. Unfortunately we often rely on Java infrastructure that does use reflection. This is the case for http4s, which relys on a Java logging library that uses reflection. For Scala 2.13 there is also an issue with its use of <code>Unsafe</code>.</p>
+<p>To use reflection with Native Image we must tell Native Image ahead of time which classes will be reflected so it can generate the appropriate data. There are various ways to do this but the most modular is to create files called <code>reflect-config.json</code> in <code>src/main/resources/META-INF/native-image/package-name/project-name</code> replacing <code>package-name</code> and <code>project-name</code> with appropriate names. <a href="https://github.com/inner-product/http4s-native-image/blob/master/src/main/resources/META-INF/native-image/co.innerproduct/ping/reflect-config.json">This is my example.</a> The format is reasonably self explanatory. If we do this we can package our configuration with our code and Native Image will automatically find it. Otherwise we must provide additional command line arguments telling Native Image where to find our configuration.</p>
+<p>We can configure other Native Image settings by creating a file called <code>native-image.properties</code> in the same location. This is important to get Scala 2.13 working with Native Image. Scala 2.13 has some uses of <code>Unsafe</code>, encapsulated in <code>scala.runtime.Statics</code>, that Native Image does not recognise and hence cannot compile. To get around this create a <a href="https://github.com/inner-product/http4s-native-image/blob/master/src/main/resources/META-INF/native-image/org.scala-lang/scala-lang/native-image.properties">file</a> <code>src/main/resources/META-INF/native-image/org.scala-lang/scala-lang/native-image.properties</code> containing</p>
+<pre><code>Args = --initialize-at-build-time=scala.runtime.Statics$VM</code></pre>
+<p>This initializes the object <code>scala.runtime.Statics</code> at compile-time and copies the object into the native executable’s heap, getting around the problem.</p>
+<p>We can set other Native Image commands this way, which again allows for an encapsulated and modular build. Here’s what I set for <code>co.innerproduct/ping</code>, which applies to the code I created.</p>
+<pre><code>Args = -H:+ReportExceptionStackTraces --allow-incomplete-classpath --no-fallback</code></pre>
+<p>These parameters, in order, are used to:</p>
+<ul>
+<li>report more informative traces in case of errors;</li>
+<li>allow compilation of code that does not contain all classes that are referenced in the code, which is important for uses of reflection; and</li>
+<li>fail the build instead of generating fallback code when Native Image cannot resolve uses of reflection or other issues.</li>
+</ul>
+<p>More information can be in the <a href="https://www.graalvm.org/docs/reference-manual/native-image/#image-generation-options">Native Image documentation</a> and if you use code that makes heavy use of reflection you might want to use the <a href="https://github.com/oracle/graal/blob/master/substratevm/CONFIGURE.md">Native Image agent</a> to automatically generate your configuration.</p>
+<p>A final issue I ran into was a complaint about Janino. I don’t understand what is causing this but adding Janino as a dependency to my project (and hence including it in my fat JAR) solved the issue.</p>
+<p>With all the above in place the code should compile and, several hundreds of thousands of milliseconds later, we’ll have a owkring executable. In my case I can connect to port 8080 with my web browser and see the server is indeed working.</p>
+<h2 id="cross-building-using-docker">Cross-Building Using Docker</h2>
+<p>I’m building on a Mac laptop but I want to deploy on Linux. Native Image does not support cross-building, so to build a Linux executable I must run Native Image within a Docker container.</p>
+<p>Oracle provides Docker images with GraalVM, but not with Native Image. It’s a simple matter to create an image with Native Image using the Oracle images as a base. Here’s the <code>Dockerfile</code></p>
+<pre><code>ARG GRAAL_VERSION=19.3.1-java11
+FROM oracle/graalvm-ce:${GRAAL_VERSION}
+WORKDIR /opt/native-image
+RUN gu install native-image
+ENTRYPOINT [&quot;native-image&quot;]</code></pre>
+<p>I can build this image using the command, from within the directory that contains the <code>Dockerfile</code> (which is <code>docker</code> in my code; this directory contains nothing else to keep the resulting image as small as possible.)</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="ex">docker</span> build -t inner-product/graalvm-native-image .</a></code></pre></div>
+<p>Now I can use the image I just made to cross-build a Linux executable. I created a sbt task to do this, so that my task could depend on the local of the fat JAR built by <code>sbt-assembly</code>. Here’s the code for this task</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">lazy</span> <span class="kw">val</span> nativeImage =</a>
+<a class="sourceLine" id="cb8-2" title="2">  taskKey[File](<span class="st">&quot;Build a standalone executable using GraalVM Native Image&quot;</span>)</a>
+<a class="sourceLine" id="cb8-3" title="3"></a>
+<a class="sourceLine" id="cb8-4" title="4">nativeImage := {</a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">import</span> sbt.<span class="fu">Keys</span>.<span class="fu">streams</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="kw">val</span> assemblyFatJar = assembly.<span class="fu">value</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">val</span> assemblyFatJarPath = assemblyFatJar.<span class="fu">getParent</span>()</a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="kw">val</span> assemblyFatJarName = assemblyFatJar.<span class="fu">getName</span>()</a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="kw">val</span> outputPath = (baseDirectory.<span class="fu">value</span> / <span class="st">&quot;out&quot;</span>).<span class="fu">getAbsolutePath</span>()</a>
+<a class="sourceLine" id="cb8-10" title="10">  <span class="kw">val</span> outputName = <span class="st">&quot;ping-server&quot;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">  <span class="kw">val</span> nativeImageDocker = <span class="st">&quot;inner-product/graalvm-native-image&quot;</span></a>
+<a class="sourceLine" id="cb8-12" title="12"></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">val</span> cmd = s<span class="st">&quot;&quot;&quot;docker run</span></a>
+<a class="sourceLine" id="cb8-14" title="14">     | --volume ${assemblyFatJarPath}:/opt/assembly</a>
+<a class="sourceLine" id="cb8-15" title="15">     | --volume ${outputPath}:/opt/native-image</a>
+<a class="sourceLine" id="cb8-16" title="16">     | ${nativeImageDocker}</a>
+<a class="sourceLine" id="cb8-17" title="17">     | --static</a>
+<a class="sourceLine" id="cb8-18" title="18">     | -jar /opt/assembly/${assemblyFatJarName}</a>
+<a class="sourceLine" id="cb8-19" title="19">     | ${outputName}<span class="st">&quot;&quot;&quot;.stripMargin.filter(_ != '</span><span class="ch">\n</span><span class="st">')</span></a>
+<a class="sourceLine" id="cb8-20" title="20"></a>
+<a class="sourceLine" id="cb8-21" title="21">  <span class="kw">val</span> log = streams.<span class="fu">value</span>.<span class="fu">log</span></a>
+<a class="sourceLine" id="cb8-22" title="22">  log.<span class="fu">info</span>(s<span class="st">&quot;Building native image from ${assemblyFatJarName}&quot;</span>)</a>
+<a class="sourceLine" id="cb8-23" title="23">  log.<span class="fu">debug</span>(cmd)</a>
+<a class="sourceLine" id="cb8-24" title="24">  <span class="kw">val</span> result = (cmd.!(log))</a>
+<a class="sourceLine" id="cb8-25" title="25"></a>
+<a class="sourceLine" id="cb8-26" title="26">  <span class="kw">if</span> (result == <span class="dv">0</span>) <span class="fu">file</span>(s<span class="st">&quot;${outputPath}/${outputName}&quot;</span>)</a>
+<a class="sourceLine" id="cb8-27" title="27">  <span class="kw">else</span> {</a>
+<a class="sourceLine" id="cb8-28" title="28">    log.<span class="fu">error</span>(s<span class="st">&quot;Native image command failed:</span><span class="ch">\n</span><span class="st"> ${cmd}&quot;</span>)</a>
+<a class="sourceLine" id="cb8-29" title="29">    <span class="kw">throw</span> <span class="kw">new</span> Exception(<span class="st">&quot;Native image command failed&quot;</span>)</a>
+<a class="sourceLine" id="cb8-30" title="30">  }</a>
+<a class="sourceLine" id="cb8-31" title="31">}</a></code></pre></div>
+<p>Now I can simply run the <code>nativeImage</code> task from within sbt and, after a substantial pause, I will have a Linux executable called <code>ping</code>.</p>
+<p>There’s really only one thing to note about this command: I passed the <code>--static</code> parameter to Native Image. This creates a statically linked executable that has no dependencies on external libraries. This can be important when deploying as discussed in the next section.</p>
+<h2 id="creating-a-deployment-docker-image">Creating a Deployment Docker Image</h2>
+<p>The final step is to create a Docker image in which I can deploy my code. Because I built a statically linked executable I don’t need very much external support, so I can create a very small image. Alpine Linux is a distribution created specifically for the use case of building small Docker images. I can create my Docker image using Alpine Linux and the executable I built earlier with the following Dockerfile.</p>
+<pre><code>FROM alpine:3.11.3
+COPY ping-server /opt/ping-server/ping-server
+RUN chmod +x /opt/ping-server/ping-server
+EXPOSE 8080
+ENTRYPOINT [&quot;/opt/ping-server/ping-server&quot;]</code></pre>
+<p>We build this image with the following command, assuming the Dockerfile is in the current directory which also contains the executable we previously built.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="ex">docker</span> build -t inner-product/ping-server .</a></code></pre></div>
+<p>We can run the resulting image with using the <code>docker run</code> command.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="ex">docker</span> run -d -p 8080:8080/tcp inner-product/ping-server</a></code></pre></div>
+<p>Now visit <code>http://localhost:8080/ping/hello</code> and you should see a result!</p>
+<p>Finally stop the Docker using the container id printed when you ran it above.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="ex">docker</span> stop <span class="op">&lt;</span>container-id<span class="op">&gt;</span></a></code></pre></div>
+<h2 id="conclusions">Conclusions</h2>
+<p>We’ve seen that creating an executable from Scala code using GraalVM Native Image is quite straightforward. There is a bit of one-off cost to get everything setup, but you can copy the work I’ve done and, if you’re just using http4s and other Typelevel projects, it is unlikely you’ll have to do additional configuration. Compilation is not fast, but this is something you could offload to a CI/CD server. The resulting executable is easy to deploy.</p>
+<p>One of the attractions of native executables is faster startup and reduced memory consumption compared to the standard JVM. This, along with deployment, is something I’ll look at in the next in this series.</p>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>I relied on lots of different resources to get this all working. I’ve linked to documentation above where it is relevant but there were a few other sources I used:</p>
+<ul>
+<li><a href="https://github.com/scala/bug/issues/11634">This Scala bug report</a> contained the solution to getting Scala 2.13 working with GraalVM Native Image.</li>
+<li><a href="https://blog.softwaremill.com/small-fast-docker-images-using-graalvms-native-image-99c0bc92e70b">This blog post</a> from SoftwareMill was a useful reference for the Docker part of the puzzle.</li>
+</ul>
+<p>Thanks Dale and Adam!</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>
