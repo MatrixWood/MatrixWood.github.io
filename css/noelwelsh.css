@@ -1,0 +1,63 @@
+header.page-header {
+    padding: 20px;
+}
+body, html {
+    font-family: "Merriweather";
+    background-color: #F9F2F2;
+    color: #00000f;
+    height: 100%;
+    margin: 0;
+}
+.fade-in:after {
+    z-index: 10;
+    content: "";
+    display: block;
+    position: absolute;
+    height: 0%;
+    top: 0;
+    left: 0;
+    right: 0;
+    animation-name: fade-in;
+    animation-timing-function: ease-in-out;
+    animation-duration: 1.25s;
+}
+h1,h2,h3,h4 {
+    font-family: Raleway;
+}
+p.lead {
+    font-family: Raleway;
+}
+a {
+    color: #0194EF;
+}
+blockquote {
+    border-left: 4px solid #00000f;
+    padding-left: 20px;
+    font-size: 1.2rem;
+    font-style: italic;
+}
+figure {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+figure img {
+    display: inline-block;
+}
+figcaption {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: inline-block;
+}
+@keyframes fade-in {
+    from {
+        height: 100%;
+        background-color: hsla(0, 52%, 10%, 1.0);
+        color: hsla(0, 52%, 10%, 1.0);
+    }
+    to {
+        height: 100%;
+        background-color: hsla(0, 52%, 100%, 0.0);
+        color: hsla(0, 52%, 100%, 0.0);
+    }
+}
