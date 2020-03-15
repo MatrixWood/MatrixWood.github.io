@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>matrixwood</title>
+        <link>http:://matrixwood.netlify.com</link>
+        <description><![CDATA[RSS feed for matrixwood.]]></description>
+        <atom:link href="http:://matrixwood.netlify.com/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Sun, 15 Mar 2020 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>A test post</title>
+    <link>http:://matrixwood.netlify.com/posts/2020-03-15-just-a-test.html</link>
+    <description><![CDATA[A test post]]></description>
+    <pubDate>Sun, 15 Mar 2020 00:00:00 UT</pubDate>
+    <guid>http:://matrixwood.netlify.com/posts/2020-03-15-just-a-test.html</guid>
+    <dc:creator>wwc7033@gmail.com CanftIn</dc:creator>
+</item>
+
+    </channel>
+</rss>
