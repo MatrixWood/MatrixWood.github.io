@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Matrix Wood: Quick Clojure Review</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Quick Clojure Review</h1>
+        
+            <p><small>March  1, 2020</small></p>
+        
+    </section>
+    <section>
+        <p><a href="https://clojure.org/">Clojure</a> is a functional, symbiotic, and homoiconic programming language. - Functional: where functions are first-class citizens and mutating state is frowned upon - Symbiotic: the language is intended to be run atop a host. environment - Homoiconic: “code is data” — this helps facilitate a macro system for rewriting the language. <!--more--></p>
+<h1 id="data-structures">Data Structures</h1>
+<p>Clojure provides a language API based upon a select set of data structures. - List: (1 2 3) - Vector: [1 2 3] - Map: {:foo “bar”} - Set: #{1 2 3}</p>
+<h2 id="list">List</h2>
+<p>A list uses parentheses as its surrounding delimiters, and so an empty list would look like (), whereas a list with three elements could look like (“a” “b” “c”).</p>
+<p>Clojure will happily hide those details away from you and provide abstractions that make dealing with data structures in the most appropriate and performant manner very easy.</p>
+<p>By using the <code>cons</code> function, which will insert your value at the beginning of the list.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" title="1">(<span class="kw">cons</span> <span class="dv">4</span> '(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="co">;; (4 1 2 3)</span></a></code></pre></div>
+<p>Or, <code>conj</code> function instead, which will pick the correct method for inserting the new value at the start of the list.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" title="1">(conj '(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>) <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">;; (4 1 2 3)</span></a></code></pre></div>
+<p>But, if your data structure were a vector collection instead, then the conj function would know to insert the value at the end of the collection.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb3-1" title="1">(conj [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>] <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">;; [1 2 3 4]</span></a></code></pre></div>
+<p>There are other abstraction functions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb4-1" title="1">(peek [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>]) <span class="co">;; 3</span></a>
+<a class="sourceLine" id="cb4-2" title="2">(peek '(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>)) <span class="co">;; 1</span></a>
+<a class="sourceLine" id="cb4-3" title="3">(<span class="kw">pop</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>]) <span class="co">;; [1 2]</span></a>
+<a class="sourceLine" id="cb4-4" title="4">(<span class="kw">pop</span> '(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>)) <span class="co">;; (2 3)</span></a></code></pre></div>
+<h2 id="vector">Vector</h2>
+<p>Vectors allow you to have index access to any element within the data structure.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb5-1" title="1">(<span class="kw">get</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="co">;; 4</span></a></code></pre></div>
+<p>You can modify the vector by using the assoc function (which is an abbreviation of “associate”). The way it works is that you provide the index of the vector you want to modify and then provide the value.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb6-1" title="1">(<span class="kw">assoc</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">5</span> <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">;; [1 2 3 4 5 6]</span></a>
+<a class="sourceLine" id="cb6-3" title="3">(<span class="kw">assoc</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">0</span> <span class="dv">8</span>)</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">;; [8 2 3 4 5]</span></a></code></pre></div>
+<p>but what if you want to remove a value? One way to do this would be to use the pop function, which returns a copy of the vector but with the last element removed.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb7-1" title="1">(<span class="kw">pop</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>])</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="co">;; [1 2 3 4]</span></a></code></pre></div>
+<h2 id="map">Map</h2>
+<p>The map data structure goes by many different names—hash, hash map, dictionary—and what distinguishes it from other data structures is the underlying implementation, which is a key part of ensuring the algorithmic performance of this particular data structure.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb8-1" title="1">{:my-key <span class="st">&quot;this is my value&quot;</span>}</a>
+<a class="sourceLine" id="cb8-2" title="2">(<span class="kw">get</span> {:my-key <span class="st">&quot;this is my value&quot;</span>} :my-key)</a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">;; &quot;this is my value&quot;</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="co">;; If you want the entire entry</span></a>
+<a class="sourceLine" id="cb8-6" title="6">(<span class="kw">find</span> {:a <span class="dv">1</span> :b <span class="dv">2</span>} :a)</a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="co">;; [:a 1]</span></a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9">(<span class="kw">assoc</span> {:foo <span class="st">&quot;bar&quot;</span>} :baz <span class="st">&quot;qux&quot;</span>)</a>
+<a class="sourceLine" id="cb8-10" title="10"><span class="co">;; {:foo &quot;bar&quot;, :baz &quot;qux&quot;}</span></a>
+<a class="sourceLine" id="cb8-11" title="11"></a>
+<a class="sourceLine" id="cb8-12" title="12">(dissoc {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :baz)</a>
+<a class="sourceLine" id="cb8-13" title="13"><span class="co">;; {:foo &quot;bar&quot;}</span></a>
+<a class="sourceLine" id="cb8-14" title="14"></a>
+<a class="sourceLine" id="cb8-15" title="15">(select-keys {<span class="bu">:name</span> <span class="st">&quot;Mark&quot;</span> :age <span class="dv">33</span> :location <span class="st">&quot;London&quot;</span>} [<span class="bu">:name</span> :location])</a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="co">;; {:name &quot;Mark&quot;, :location &quot;London&quot;}</span></a></code></pre></div>
+<h3 id="keywords">Keywords</h3>
+<p>Some readers may be wondering what the colon prefixing the key is supposed to mean. The colon indicates that the key is actually a keyword.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb9-1" title="1"><span class="co">;; Keyword as a Function</span></a>
+<a class="sourceLine" id="cb9-2" title="2">(<span class="kw">get</span> {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :baz)</a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="co">;; &quot;qux&quot;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">(:baz {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="co">;; &quot;qux&quot;</span></a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="co">;; Demonstrate the contains? Function</span></a>
+<a class="sourceLine" id="cb9-8" title="8">(contains? {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :foo)</a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="co">;; true</span></a></code></pre></div>
+<h3 id="keys-values-and-replacement">Keys, Values, and Replacement</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb10-1" title="1"><span class="co">;; Demonstrate the keys and vals Functions</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3">(keys {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="co">;; (:baz :foo)</span></a>
+<a class="sourceLine" id="cb10-5" title="5">(vals {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="co">;; (&quot;qux&quot; &quot;bar&quot;)</span></a></code></pre></div>
+<p>The replace function allows you to create a new vector consisting of values extracted from a map data structure.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb11-1" title="1"><span class="co">;; Demonstrate the replace Function</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3">(<span class="kw">replace</span> {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>} [:c :b :a])</a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">;; [3 2 1]</span></a>
+<a class="sourceLine" id="cb11-5" title="5">(<span class="kw">replace</span> [:a :b :c] [<span class="dv">2</span> <span class="dv">1</span> <span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="co">;; [:c :b :a].</span></a></code></pre></div>
+<h2 id="set">Set</h2>
+<p>A set is a data structure made up of unique values. Much like Clojure’s map and vector data structures, it provides Clojure with a very lightweight data model.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb12-1" title="1"><span class="co">;; Simple Set Data Structure Example</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">#{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> :a :b :c}</a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="co">;; #{1 :c 3 2 :b :a}</span></a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="co">;; Filter Out Duplicates</span></a>
+<a class="sourceLine" id="cb12-7" title="7">(<span class="kw">set</span> [<span class="dv">1</span> <span class="dv">1</span> <span class="dv">2</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">6</span>])</a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="co">;; #{1 4 6 3 2 5}</span></a>
+<a class="sourceLine" id="cb12-9" title="9">(<span class="kw">apply</span> sorted-set [<span class="dv">1</span> <span class="dv">1</span> <span class="dv">2</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">6</span>])</a>
+<a class="sourceLine" id="cb12-10" title="10"><span class="co">;; #{1 2 3 4 5 6}</span></a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12"><span class="co">;; Using conj to Add New Value to a Set</span></a>
+<a class="sourceLine" id="cb12-13" title="13">(conj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb12-14" title="14"><span class="co">;; #{1 4 3 2}</span></a>
+<a class="sourceLine" id="cb12-15" title="15">(conj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb12-16" title="16"><span class="co">;; #{1 3 2}</span></a>
+<a class="sourceLine" id="cb12-17" title="17"></a>
+<a class="sourceLine" id="cb12-18" title="18"><span class="co">;; Remove Items from a Set with disj</span></a>
+<a class="sourceLine" id="cb12-19" title="19">(disj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb12-20" title="20"><span class="co">;; #{1 2}</span></a></code></pre></div>
+<h1 id="functional-programming">Functional Programming</h1>
+<ul>
+<li>Immutability</li>
+<li>Referential transparency</li>
+<li>First-class functions</li>
+<li>Partial application</li>
+<li>Recursive iteration</li>
+<li>Composability</li>
+</ul>
+<h2 id="immutability">Immutability</h2>
+<p>If you have state and it can change, then once your application becomes distributed and concurrent, you’ll end up in a world of hurt, as many different threads can start manipulating your data at non-deterministic times. This can cause your application to fail at any given moment and become very hard to debug and to reason about. By offering immutability, Clojure can help to side-step this problem. In Clojure, every time you manipulate a data structure you are returned not a mutated version of the original, but rather a whole new copy with your change(s) applied. ## Referential transparency Referential transparency is when an expression can be replaced by its value without changing the behavior of a program.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb13-1" title="1"><span class="co">;; Example of a Referentially Transparent Function</span></a>
+<a class="sourceLine" id="cb13-2" title="2">(defn sum [x y]</a>
+<a class="sourceLine" id="cb13-3" title="3"> (<span class="op">+</span> x y))</a>
+<a class="sourceLine" id="cb13-4" title="4">(sum <span class="dv">1</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="co">;; 2</span></a></code></pre></div>
+<p>The function sum (shown in Listing 3-1) is referentially transparent. No matter what happens, if I provide the same set of arguments (in this case 1 and 1), I’ll always get back the same result. ## First-class Functions For a language to offer “first-class functions,” it needs to be able to both store functions and pass functions around as if they were values. We’ve already seen the former being achieved using variables, and the latter (passing functions around as values) is also possible within Clojure. - complement - apply - map - reduce - filter - comp</p>
+<h3 id="complement">complement</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb14-1" title="1"><span class="co">;; Example of the complement function returning the opposite truth value</span></a>
+<a class="sourceLine" id="cb14-2" title="2">((<span class="kw">complement</span> empty?) <span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="co">;; false</span></a></code></pre></div>
+<h3 id="apply">apply</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb15-1" title="1">(<span class="kw">apply</span> str [<span class="st">&quot;a&quot;</span> <span class="st">&quot;b&quot;</span> <span class="st">&quot;c&quot;</span>])</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="co">;; &quot;abc&quot;</span></a></code></pre></div>
+<h3 id="map-1">map</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb16-1" title="1"><span class="co">;; Example of map</span></a>
+<a class="sourceLine" id="cb16-2" title="2">(<span class="kw">map</span> inc [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>])</a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="co">;; (2 3 4)</span></a>
+<a class="sourceLine" id="cb16-4" title="4"></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="co">;; The map Return Value Type Is a List</span></a>
+<a class="sourceLine" id="cb16-6" title="6">(<span class="kw">map</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  (fn [[k v]] (inc v))</a>
+<a class="sourceLine" id="cb16-8" title="8">  {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>}) <span class="co">;; =&gt; (4 3 2)</span></a>
+<a class="sourceLine" id="cb16-9" title="9"><span class="co">;; (2 3 4)</span></a>
+<a class="sourceLine" id="cb16-10" title="10"></a>
+<a class="sourceLine" id="cb16-11" title="11"><span class="co">;; Ensure map Returns Key/Value-like Data Structure</span></a>
+<a class="sourceLine" id="cb16-12" title="12">(<span class="kw">map</span></a>
+<a class="sourceLine" id="cb16-13" title="13">  (fn [[k v]] [k (inc v)])</a>
+<a class="sourceLine" id="cb16-14" title="14">  {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>})</a>
+<a class="sourceLine" id="cb16-15" title="15"><span class="co">;; ([:c 4] [:b 3] [:a 2])</span></a></code></pre></div>
+<h3 id="reduce">reduce</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb17-1" title="1"><span class="co">;; Example of the reduce Function</span></a>
+<a class="sourceLine" id="cb17-2" title="2">(<span class="kw">reduce</span> <span class="op">+</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span>])</a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">;; 10</span></a></code></pre></div>
+<h3 id="filter">filter</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb18-1" title="1"><span class="co">;; Example of the filter Function</span></a>
+<a class="sourceLine" id="cb18-2" title="2">(filter even? (range <span class="dv">10</span>))</a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="co">;; (0 2 4 6 8)</span></a></code></pre></div>
+<h3 id="comp">comp</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb19-1" title="1"><span class="co">;; Example of the comp Function</span></a>
+<a class="sourceLine" id="cb19-2" title="2">((comp clojure.string/upper-case (partial <span class="kw">apply</span> str) <span class="kw">reverse</span>) <span class="st">&quot;hello&quot;</span>)</a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="co">;; &quot;OLLEH&quot;</span></a></code></pre></div>
+<h2 id="partial-application">Partial application</h2>
+<p>Partial application helps to promote the creation of functions that can expand their use cases beyond their initial intent. The concept of partial application is regularly confused with another functional concept known as currying (which Clojure doesn’t support). When you “curry” a function, the function’s arguments are expanded internally into separate functions. A curried function won’t execute its body until all arguments have been provided (similar to partial application). So, again, if your function accepted three arguments you could effectively call your curried function in one of the following ways.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="co">// Internal Representation of a Curry-Compiled Output</span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="kw">function</span> <span class="at">f</span>(a) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="kw">function</span> (b) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-4" title="4">        <span class="kw">function</span> (c) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-5" title="5">            <span class="cf">return</span> a <span class="op">+</span> b <span class="op">+</span> c<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb20-9" title="9"><span class="at">foo</span>(<span class="st">'x'</span>)(<span class="st">'y'</span>)(<span class="st">'z'</span>) <span class="co">// 'xyz'</span></a></code></pre></div>
+<p>So, just to recap, the main differences between currying and partial application are as follows. 1. You only partially apply your values once. So, if your function takes three arguments and you partially apply two of them, then when your resulting function is called you only provide one argument. If you had instead partially applied only one argument, you would still only call the resulting function once (but this time you would have to provide the remaining two arguments). 2. If we consider the “API” scenario from earlier, you are providing the initial values for the partially applied function, whereas with a curried function it is the user who provides the arguments.</p>
+<h2 id="recursive-iteration">Recursive Iteration</h2>
+<p>The classic for loop you’re likely familiar with <code>for (i = 0; i &lt; 10; i++) {}</code> by design allows mutating local variables to increment the loop. In Clojure, local variables are immutable, and so for us to loop we need to use recursive function calls instead. Instead of looping, you’ll typically need to use the <code>loop/recur</code> special form, although a lot of the time other iterator-style functions such as map, reduce, and filter will be better fitted to solving the problem at hand. The main benefit of the <code>loop/recur</code> special form is that it allows you to safely apply recursive function calls without exhausting your memory stack. For example, if you’ve ever written any JavaScript code in your life you’ll likely have hit a problem at least once where you’ve exhausted the stack and caused a “stack overflow” error.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb21-1" title="1"><span class="co">;; Example of Stack Exhaustion</span></a>
+<a class="sourceLine" id="cb21-2" title="2">(defn count-down [x]</a>
+<a class="sourceLine" id="cb21-3" title="3">  (<span class="kw">if</span> (<span class="op">=</span> x <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb21-4" title="4">    (prn <span class="st">&quot;finished&quot;</span>)</a>
+<a class="sourceLine" id="cb21-5" title="5">    (count-down (<span class="kw">do</span> (prn x) (dec x)))))</a>
+<a class="sourceLine" id="cb21-6" title="6">(count-down <span class="dv">10</span>) <span class="co">;; works exactly as previous example BUT it's not safe!</span></a>
+<a class="sourceLine" id="cb21-7" title="7">(count-down <span class="dv">100000</span>) <span class="co">;; will cause a &quot;StackOverflowError&quot;</span></a></code></pre></div>
+<p>Resolving the problem with the code will require a process that the else statement need to be modified so that instead of returning a function call to count-down you return a function.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb22-1" title="1"><span class="co">;; Example of trampoline Function</span></a>
+<a class="sourceLine" id="cb22-2" title="2">(defn count-down [x]</a>
+<a class="sourceLine" id="cb22-3" title="3">  (<span class="kw">if</span> (<span class="op">=</span> x <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb22-4" title="4">    (prn <span class="st">&quot;finished&quot;</span>)</a>
+<a class="sourceLine" id="cb22-5" title="5">    #(count-down (<span class="kw">do</span> (prn x) (dec x)))))</a>
+<a class="sourceLine" id="cb22-6" title="6">(trampoline count-down <span class="dv">10</span>) <span class="co">; works fine still</span></a>
+<a class="sourceLine" id="cb22-7" title="7">(trampoline count-down <span class="dv">100000</span>) <span class="co">; no longer triggers an error</span></a></code></pre></div>
+<p>Remember: #(…) is a shorthand syntax for an anonymous function. ## Composability The main reason this is such a key aspect of functional programming is that your units of functionality should be generic enough to be reused within many different contexts, rather than being overly specific to one environment and ultimately not being reusable.</p>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <div class="copyright left mobile-block">
+              © 2016-2020
+              <a href="https://github.com/MatrixWood">MatrixWood</a>
+            </div>
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

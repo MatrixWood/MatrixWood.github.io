@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Matrix Wood: Magit-QuickStart</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Magit-QuickStart</h1>
+        
+            <p><small>March  9, 2020</small></p>
+        
+    </section>
+    <section>
+        <p>Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain. While we cannot (yet) claim that Magit wraps and improves upon each and every Git command, it is complete enough to allow even experienced Git users to perform almost all of their daily version control tasks directly from within Emacs. While many fine Git clients exist, only Magit and Git itself deserve to be called porcelains. <!--more--> # Contents</p>
+<ul>
+<li>contents {:toc}</li>
+</ul>
+<h2 id="show-git-status">Show git status</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+</ul>
+<h2 id="show-help">Show help</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>?</code> get help</li>
+</ul>
+<h2 id="show-git-log">Show git log</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+</ul>
+<h2 id="show-all-commits-for-the-current-file">Show all commits for the current file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>f</code> <code>l</code> show git log for the current file</li>
+</ul>
+<h2 id="diff-a-range-of-commits">Diff a range of commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>V</code> to select the line</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on another commit</li>
+<li><code>d</code> <code>r</code> to show a diff of the range of commits</li>
+</ul>
+<h2 id="checkout-a-local-branch">Checkout a local branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>b</code> <code>b</code> checkout a branch</li>
+<li>select or enter the branch name and hit ENTER</li>
+</ul>
+<h2 id="checkout-a-commit">Checkout a commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>b</code> <code>b</code> ENTER to checkout that commit</li>
+</ul>
+<h2 id="checkout-a-different-revision-of-a-file">Checkout a different revision of a file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>move point to the commit you want to checkout (using <code>j</code> and <code>k</code>)</li>
+<li><code>O</code> (capital letter O) <code>f</code> reset a file</li>
+<li>hit <code>ENTER</code> to select the default revision selected above. (it will look something like - master)</li>
+<li>select a file</li>
+<li><code>q</code> to close the log view and see the file at the selected revision is staged</li>
+</ul>
+<h2 id="open-a-different-revision-of-a-file">Open a different revision of a file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>move point to the commit you want to checkout (using <code>j</code> and <code>k</code>)</li>
+<li><code>SPC</code> <code>g</code> <code>f</code> <code>f</code> (magit-find-file) to open a file at a revision</li>
+<li><code>ENTER</code> to use the selected commit</li>
+<li>select the name of the file to open</li>
+</ul>
+<h2 id="create-a-local-branch-from-a-remote-branch">Create a local branch from a remote branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>b</code> <code>c</code> create a branch</li>
+<li>select or enter the remote branch and hit <code>ENTER</code></li>
+<li>hit <code>ENTER</code> to use the same name or enter a new name and hit <code>ENTER</code></li>
+</ul>
+<h2 id="pull-from-upstream">Pull from upstream</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>F</code> <code>u</code> pull from upstream</li>
+</ul>
+<h2 id="push-to-upstream">Push to upstream</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>P</code> <code>u</code> push to upstream</li>
+</ul>
+<h2 id="stage-files-and-commit">Stage files and commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a file</li>
+<li><code>TAB</code> to show and hide the diff for the file</li>
+<li><code>s</code> to stage a file (<code>u</code> to unstage a file and <code>x</code> to discard changes to a file)</li>
+<li><code>c</code> <code>c</code> to commit</li>
+<li>write a commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish the commit message</li>
+</ul>
+<h2 id="stage-specific-hunks">Stage specific hunks</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>M-n</code> / <code>M-p</code> to move to the “Unstaged changes” section</li>
+<li><code>j</code> / <code>k</code> to move to the desired file</li>
+<li><code>TAB</code> to expand the hunks in the file</li>
+<li><code>M-n</code> / <code>M-p</code> to move to different hunks</li>
+<li><code>s</code> / <code>u</code> to stage or unstange hunks</li>
+<li><code>x</code> to discard a hunk</li>
+<li><code>c</code> <code>c</code> to commit</li>
+<li>Enter a commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish the commit</li>
+</ul>
+<h2 id="merge-master-into-the-current-branch">Merge master into the current branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>m</code> <code>m</code> merge</li>
+<li>select or enter master and hit <code>ENTER</code></li>
+</ul>
+<h2 id="rebase-the-current-branch-onto-master">Rebase the current branch onto master</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>r</code> <code>e</code> rebase</li>
+<li>select or enter master and hit <code>ENTER</code></li>
+</ul>
+<h2 id="use-interactive-rebase-to-squash-commits">Use interactive rebase to squash commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>r</code> <code>i</code> to start the interactive rebase</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit to squash</li>
+<li><code>s</code> to mark the commit as to be squashed. (use <code>s</code> multiple times to squash multiple commits)</li>
+<li><code>,</code> <code>c</code> to make it happen</li>
+<li>edit the new squashed commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish</li>
+</ul>
+<h2 id="use-interactive-rebase-to-reorder-commits">Use interactive rebase to reorder commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code>show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>ri</code> to start the interactive rebase</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit to reorder</li>
+<li>use <code>M-k</code> or <code>M-j</code> to move the commit up or down</li>
+<li><code>,</code> <code>c</code> to make it happen</li>
+</ul>
+<h2 id="revert-a-commit">Revert a commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on the commit you want to revert</li>
+<li><code>_</code> <code>O</code> (capital letter O) to revert the commit</li>
+<li>edit the commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish</li>
+</ul>
+<h2 id="soft-reset-the-last-commit">(Soft) reset the last commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor one commit before the last one</li>
+<li><code>O</code> (capital letter O) <code>s</code> to soft reset</li>
+<li>the selected commit should be e.g. master. Hit <code>ENTER</code></li>
+</ul>
+<h2 id="stash-changes">Stash changes</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>z</code> <code>z</code> stash changes</li>
+<li>enter stash message and hit <code>ENTER</code></li>
+</ul>
+<h2 id="pop-stash">Pop stash</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>z</code> <code>p</code> pop from stash</li>
+<li>select the stash to pop and hit <code>ENTER</code></li>
+</ul>
+<h2 id="copy-git-commit-sha">Copy git commit SHA</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>y</code> <code>s</code> copy the git commit SHA</li>
+</ul>
+<h2 id="copy-text-from-a-magit-buffer">Copy text from a Magit buffer</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>\</code> switch to text mode</li>
+<li>copy text using normal vim keystrokes</li>
+<li><code>\</code> switch back to Magit mode</li>
+</ul>
+<h2 id="run-a-shell-command">Run a shell command</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>!</code> <code>s</code> run a shell command</li>
+<li><p>enter a command to run and hit <code>ENTER</code></p></li>
+<li><h2 id="list-all-branches">List all branches</h2></li>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><p><code>y</code> <code>r</code> show refs</p></li>
+</ul>
+<h2 id="jump-to-the-nextprev-section-in-the-status-view">Jump to the next/prev section in the status view</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>g</code> <code>j</code> jump to the next section</li>
+<li><code>g</code> <code>k</code> jump to the previous section</li>
+</ul>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <div class="copyright left mobile-block">
+              © 2016-2020
+              <a href="https://github.com/MatrixWood">MatrixWood</a>
+            </div>
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

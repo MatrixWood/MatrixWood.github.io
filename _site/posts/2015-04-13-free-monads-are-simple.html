@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Matrix Wood: Free Monads Are Simple</title>
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <link rel="stylesheet" href="../css/noelwelsh.css" />
+        <link rel="stylesheet" href="../css/tango.css" />
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+    </head>
+    <body>
+        <header class="page-header">
+            <nav class="nav justify-content-center">
+                <strong><a class="nav-link active" href="../">Home</a></strong>
+                <a class="nav-link" href="../writing.html">Writing</a>
+                <a class="nav-link" href="../projects.html">Projects</a>
+                <a class="nav-link" href="../about.html">About</a>
+            </nav>
+        </header>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col col-9">
+                    <main role="main">
+                        <article>
+    <section class="header">
+        <h1>Free Monads Are Simple</h1>
+        
+            <p><small>April 13, 2015</small></p>
+        
+    </section>
+    <section>
+        <p>I recently gave <a href="../downloads/advanced-scala-2015-free-monads.pdf">a talk</a> at the <a href="http://www.meetup.com/london-scala/events/220942615/">Advanced Scala meetup</a> in London on free monads. Despite the name of the group, I think that free monads are eminently simple as well as being extremely useful. Let me explain.</p>
+<!--more-->
+<p>The free monad brings together two concepts, monads and interpreters, allowing the creation of composable monadic interpreters. That’s a bunch of big words, but why should we care? Because it allows simple solutions to difficult problems.</p>
+<p>Take the example of Facebook’s <a href="https://github.com/facebook/Haxl">Haxl</a> and Twitter’s <a href="https://www.youtube.com/watch?v=VVpmMfT8aYw">Stitch</a>. Both systems solve a problem faced by companies that have aggressively adopted a service oriented architecture:<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> service orchestration.</p>
+<p>Consider rendering a user’s Twitter stream. Hypothetically, the process might first retrieve the list of recent tweets from one service. Then for each tweet it might fetch the tweeter’s name and picture to go alongside the tweet, which could require a request to two more services. No doubt there are logging and analytics services that would also be involved. All told a great number of services and requests can be involved in answering what is a single request from the UI perspective. With this explosion of requests there are a number of problems: increased network traffic, increased latency (which goes hand-in-hand with traffic), and consistency. The last point deserves some explanation. Imagine two tweets by the same person are in the stream. That person could change their details inbetween fetching the name and photo for the first and second tweet. If we allow this inconsistency to occur it makes for a very poor user experience, as the user can’t tell at a glance that the two tweets are by the same person. It’s fairly clear that we could avoid this inconsistency <em>and</em> solve our network traffic and latency issues if we just cached data. We could implement this by writing special-purpose request aggregation and caching for each request type, which is quickly going to be a losing battle as APIs and interfaces evolve. Or we could write a general purpose tool that allows us to describe the data we need and takes care of the optimisation for us. The free monad allows us to easily do this. Sold? Ok, let’s get back to describing the free monad.</p>
+<h2 id="monads">Monads</h2>
+<p>Remember I said the free monad brings together monads and interpreters. Let’s start with the monad part. I’m going to assume you understand monads already. If not, don’t worry. They’re just like cats or burritos or something.</p>
+<p>Now recall that a monad is defined by two operations<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, <code>point</code> and <code>flatMap</code>, with signatures</p>
+<ul>
+<li><code>point[M[_], A](a: A): M[A]</code>; and</li>
+<li><code>flatMap[M[_], A, B](fa: F[A])(f: A =&gt; F[B]): F[B]</code>.</li>
+</ul>
+<p><code>Point</code> is not very interesting — it just wraps a monad around a value. <code>FlatMap</code> is, however, the distinguishing feature of a monad and it tells us something very important: <em>monads are fundamentally about control flow</em>. The signature of <code>flatMap</code> says you combine a <code>F[A]</code> and a function <code>A =&gt; F[B]</code> to create a <code>F[B]</code>. The only way to do this is to get the <code>A</code> out of the <code>F[A]</code> and apply it to the <code>A =&gt; F[B]</code> function. There is a clear ordering of operations here, and repeated applications of <code>flatMap</code> creates a sequence of operations that must execute from left to right. So we see that monads explicitly encode control flow.</p>
+<p>Related to this, the continuation monad can be used to <a href="http://blog.sigfpe.com/2008/12/mother-of-all-monads.html">encode any other monad</a>. What is a <a href="http://en.wikipedia.org/wiki/Continuation">continuation</a>? It’s a universal control flow primitive. <em>Any</em> control flow can be expressed using continuations.</p>
+<p>We usually use monads to glue together pure functions with special purpose control-flow, such as fail fast error handling (using <code>\/</code> or <code>Either</code>) or asynchronous computation (using <code>Future</code>). The free monad allows us to abstractly specify control flow between pure functions, and separately define an implementation.</p>
+<h2 id="interpreters">Interpreters</h2>
+<p>Ok, so that’s monads: control flow. What about interpreters. Interpreters are about separating the representation of a computation from the way it is run. Any interpreter has two parts<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>:</p>
+<ol type="1">
+<li>an <em>abstract syntax tree</em> (AST) that represents the computation; and</li>
+<li>a process that gives meaning to the abstract syntax tree. That is, the bit that actually runs it.</li>
+</ol>
+<p>A simple example is in order. Consider the expression <code>1 + 2 + 3</code>. We can execute this directly, evaluating to <code>6</code>, or we could represent it as an abstract syntax tree such as <code>Add(1, Add(2, 3))</code>. Given the AST we could choose from many different ways to interpret it:</p>
+<ul>
+<li>We could represent results using <code>Ints</code>, <code>Doubles</code>, or arbitrary precision numbers.</li>
+<li>We could perform our calculations using <a href="http://en.wikipedia.org/wiki/Dual_number">dual numbers</a>, calculating the derivative at the same time (very useful for machine learning applications).</li>
+<li>We could transform our calculation to run on the processor’s vector unit, or on a GPU.</li>
+</ul>
+<p>Hopefully this gives you a feel for the structure and power of the interpreter pattern.</p>
+<h2 id="free-monads">Free Monads</h2>
+<p>We have talked about monads and interpreters. I said the free monad is just the combination of the two. Concretely this means the free monad provides:</p>
+<ul>
+<li>an AST to express monadic operations;</li>
+<li>an API to write interpreters that give meaning to this AST.</li>
+</ul>
+<p>What does the AST look like? It simply represents the monad operations without giving meaning to them. The usual representation of the free monad represents the monadic operations in terms of <code>point</code> along with <code>join</code>, instead of the more familiar <code>flatMap</code>, but the point is still the same. An example encoding is</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A]</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[F[_], A](a: A) <span class="kw">extends</span> Free[F, A]</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[F[_], A](s: F[Free[F, A]]) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>Now what does a free monad interpreter look like? It’s just a function from <code>F[_]</code>, the representation inside the free monad, to <code>G[_]</code> some monad in which we really run the computation (the <code>Id</code> monad is a popular choice). This type of function has a special name, a [natural computation][natural-computation].</p>
+<p>Here’s a simple example.</p>
+<p>First we define an algebraic data type to represent the actions we’re going to store in our monad.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">import</span> scalaz.{Free, ~&gt;, Id, Functor}</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">sealed</span> <span class="kw">trait</span> Log[A]</a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Debug[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Warn[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Error[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a></code></pre></div>
+<p>For technical reasons we need to have a <code>Functor</code> instance.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">object</span> Log {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">implicit</span> <span class="kw">val</span> logFunctor: Functor[Log] = <span class="kw">new</span> Functor[Log] {</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">def</span> map[A, B](fa: Log[A])(f: A =&gt; B): Log[B] =</a>
+<a class="sourceLine" id="cb3-4" title="4">      fa <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="kw">case</span> <span class="fu">Debug</span>(msg, value) =&gt; <span class="fu">Debug</span>(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-6" title="6">        <span class="kw">case</span> <span class="fu">Warn</span>(msg, value) =&gt; <span class="fu">Warn</span>(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="kw">case</span> Error(msg, value) =&gt; Error(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-8" title="8">      }</a>
+<a class="sourceLine" id="cb3-9" title="9">  }</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="co">// Smart constructors</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="kw">def</span> debug[A](msg: String, value: A): Log[A] = <span class="fu">Debug</span>(msg, value)</a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="kw">def</span> warn[A](msg: String, value: A): Log[A] = <span class="fu">Warn</span>(msg, value)</a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">def</span> error[A](msg: String, value: A): Log[A] = Error(msg, value)</a>
+<a class="sourceLine" id="cb3-15" title="15">}</a></code></pre></div>
+<p>Now we define an interpreter for <code>Log</code>. This interpreter just prints to the console. You can imagine more elaborate interpreters that, say, output logs to Kafka or other infrastructure. The interpreter is just simple structural recursion on <code>Log</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">object</span> Println <span class="kw">extends</span> (Log ~&gt; Id.<span class="fu">Id</span>) {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">import</span> Id._</a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">import</span> scalaz.<span class="fu">syntax</span>.<span class="fu">monad</span>._</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">def</span> apply[A](in: Log[A]): Id[A] =</a>
+<a class="sourceLine" id="cb4-6" title="6">    in <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">      <span class="kw">case</span> <span class="fu">Debug</span>(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-8" title="8">        <span class="fu">println</span>(s<span class="st">&quot;DEBUG: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-9" title="9">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11">      <span class="kw">case</span> <span class="fu">Warn</span>(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-12" title="12">        <span class="fu">println</span>(s<span class="st">&quot;WARN: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-13" title="13">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-14" title="14"></a>
+<a class="sourceLine" id="cb4-15" title="15">      <span class="kw">case</span> Error(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-16" title="16">        <span class="fu">println</span>(s<span class="st">&quot;ERROR: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-17" title="17">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-18" title="18">    }</a>
+<a class="sourceLine" id="cb4-19" title="19">}</a></code></pre></div>
+<p>Finally here’s an example of definition and use.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">object</span> Example {</a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">val</span> free =</a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb5-4" title="4">      x &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">debug</span>(<span class="st">&quot;Step 1&quot;</span>, <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb5-5" title="5">      y &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">warn</span>(<span class="st">&quot;Step 2&quot;</span>, <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb5-6" title="6">      z &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">error</span>(<span class="st">&quot;Step 3&quot;</span>, <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb5-7" title="7">    } <span class="kw">yield</span> x + y + z</a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">val</span> result =</a>
+<a class="sourceLine" id="cb5-10" title="10">    free.<span class="fu">foldMap</span>(Println)</a>
+<a class="sourceLine" id="cb5-11" title="11">}</a></code></pre></div>
+<h2 id="conclusions">Conclusions</h2>
+<p>That’s the basics of the free monad: it’s something we can wrap around an arbitrary type constructor (a <code>F[_]</code>) to construct a monad. It allows us to separate the structure of the computation from its interpreter, thereby allowing different interpretation depending on context.</p>
+<p>There are a lot of conveniences for using the free monad. We can use something called the Coyoneda theorem to automatically convert a type constructor into a functor that the free monad requires. We can compose different types wrapped in the free monad, and different interpreters, using coproducts. This is all useful stuff but not essential for understanding the core idea.</p>
+<p>The core idea, separating the structure and interpretation of computer programs, is incredibly powerful (wizardly, even). Haxl and Stitch are just one prominent example of this.</p>
+<p>If you are interested in learning more about these ideas, we are writing a book <a href="http://underscore.io/training/courses/advanced-scala-scalaz">Essential Interpreters</a> that covers the basics of interpreters up to the free monad.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Etsy, for example, faces the same problem but [their solution][https://codeascraft.com/2015/04/06/experimenting-with-hhvm-at-etsy/] is rather less elegant and performant.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>And the monad laws.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>Some very simple interpreters entwine these two parts, but they are conceptually if not literally separate.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center">
+            <div class="copyright left mobile-block">
+              © 2016-2020
+              <a href="https://github.com/MatrixWood">MatrixWood</a>
+            </div>
+            <small>
+                Site generated by
+                <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            </small>
+        </footer>
+    </body>
+</html>

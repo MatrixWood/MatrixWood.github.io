@@ -4,4 +4,4 @@ title: About
 
 # About
 
-NONE
+Here is Matrix Wood. Site be founded by [CanftIn](https://canftin.com/).
