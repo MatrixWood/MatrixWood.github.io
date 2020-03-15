@@ -64,6 +64,8 @@ main = hakyll $ do
                 >>= relativizeUrls
 
 
+
+
     match "templates/*" $ compile templateBodyCompiler
 
 
