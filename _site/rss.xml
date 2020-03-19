@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>matrixwood</title>
+        <link>http:://matrixwood.netlify.com</link>
+        <description><![CDATA[RSS feed for matrixwood.netlify.com.]]></description>
+        <atom:link href="http:://matrixwood.netlify.com/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Mon, 09 Mar 2020 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>Magit-QuickStart</title>
+    <link>http:://matrixwood.netlify.com/posts/2020-03-09-Magit-QuickStart.html</link>
+    <description><![CDATA[<p>Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain. While we cannot (yet) claim that Magit wraps and improves upon each and every Git command, it is complete enough to allow even experienced Git users to perform almost all of their daily version control tasks directly from within Emacs. While many fine Git clients exist, only Magit and Git itself deserve to be called porcelains. <!--more--> # Contents</p>
+<ul>
+<li>contents {:toc}</li>
+</ul>
+<h2 id="show-git-status">Show git status</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+</ul>
+<h2 id="show-help">Show help</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>?</code> get help</li>
+</ul>
+<h2 id="show-git-log">Show git log</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+</ul>
+<h2 id="show-all-commits-for-the-current-file">Show all commits for the current file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>f</code> <code>l</code> show git log for the current file</li>
+</ul>
+<h2 id="diff-a-range-of-commits">Diff a range of commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>V</code> to select the line</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on another commit</li>
+<li><code>d</code> <code>r</code> to show a diff of the range of commits</li>
+</ul>
+<h2 id="checkout-a-local-branch">Checkout a local branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>b</code> <code>b</code> checkout a branch</li>
+<li>select or enter the branch name and hit ENTER</li>
+</ul>
+<h2 id="checkout-a-commit">Checkout a commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>b</code> <code>b</code> ENTER to checkout that commit</li>
+</ul>
+<h2 id="checkout-a-different-revision-of-a-file">Checkout a different revision of a file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>move point to the commit you want to checkout (using <code>j</code> and <code>k</code>)</li>
+<li><code>O</code> (capital letter O) <code>f</code> reset a file</li>
+<li>hit <code>ENTER</code> to select the default revision selected above. (it will look something like - master)</li>
+<li>select a file</li>
+<li><code>q</code> to close the log view and see the file at the selected revision is staged</li>
+</ul>
+<h2 id="open-a-different-revision-of-a-file">Open a different revision of a file</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>move point to the commit you want to checkout (using <code>j</code> and <code>k</code>)</li>
+<li><code>SPC</code> <code>g</code> <code>f</code> <code>f</code> (magit-find-file) to open a file at a revision</li>
+<li><code>ENTER</code> to use the selected commit</li>
+<li>select the name of the file to open</li>
+</ul>
+<h2 id="create-a-local-branch-from-a-remote-branch">Create a local branch from a remote branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>b</code> <code>c</code> create a branch</li>
+<li>select or enter the remote branch and hit <code>ENTER</code></li>
+<li>hit <code>ENTER</code> to use the same name or enter a new name and hit <code>ENTER</code></li>
+</ul>
+<h2 id="pull-from-upstream">Pull from upstream</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>F</code> <code>u</code> pull from upstream</li>
+</ul>
+<h2 id="push-to-upstream">Push to upstream</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>P</code> <code>u</code> push to upstream</li>
+</ul>
+<h2 id="stage-files-and-commit">Stage files and commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a file</li>
+<li><code>TAB</code> to show and hide the diff for the file</li>
+<li><code>s</code> to stage a file (<code>u</code> to unstage a file and <code>x</code> to discard changes to a file)</li>
+<li><code>c</code> <code>c</code> to commit</li>
+<li>write a commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish the commit message</li>
+</ul>
+<h2 id="stage-specific-hunks">Stage specific hunks</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>M-n</code> / <code>M-p</code> to move to the “Unstaged changes” section</li>
+<li><code>j</code> / <code>k</code> to move to the desired file</li>
+<li><code>TAB</code> to expand the hunks in the file</li>
+<li><code>M-n</code> / <code>M-p</code> to move to different hunks</li>
+<li><code>s</code> / <code>u</code> to stage or unstange hunks</li>
+<li><code>x</code> to discard a hunk</li>
+<li><code>c</code> <code>c</code> to commit</li>
+<li>Enter a commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish the commit</li>
+</ul>
+<h2 id="merge-master-into-the-current-branch">Merge master into the current branch</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>m</code> <code>m</code> merge</li>
+<li>select or enter master and hit <code>ENTER</code></li>
+</ul>
+<h2 id="rebase-the-current-branch-onto-master">Rebase the current branch onto master</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>r</code> <code>e</code> rebase</li>
+<li>select or enter master and hit <code>ENTER</code></li>
+</ul>
+<h2 id="use-interactive-rebase-to-squash-commits">Use interactive rebase to squash commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>r</code> <code>i</code> to start the interactive rebase</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit to squash</li>
+<li><code>s</code> to mark the commit as to be squashed. (use <code>s</code> multiple times to squash multiple commits)</li>
+<li><code>,</code> <code>c</code> to make it happen</li>
+<li>edit the new squashed commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish</li>
+</ul>
+<h2 id="use-interactive-rebase-to-reorder-commits">Use interactive rebase to reorder commits</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code>show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>ri</code> to start the interactive rebase</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit to reorder</li>
+<li>use <code>M-k</code> or <code>M-j</code> to move the commit up or down</li>
+<li><code>,</code> <code>c</code> to make it happen</li>
+</ul>
+<h2 id="revert-a-commit">Revert a commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on the commit you want to revert</li>
+<li><code>_</code> <code>O</code> (capital letter O) to revert the commit</li>
+<li>edit the commit message and save with <code>SPC</code> <code>f</code> <code>s</code></li>
+<li><code>,</code> <code>c</code> to finish</li>
+</ul>
+<h2 id="soft-reset-the-last-commit">(Soft) reset the last commit</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor one commit before the last one</li>
+<li><code>O</code> (capital letter O) <code>s</code> to soft reset</li>
+<li>the selected commit should be e.g. master. Hit <code>ENTER</code></li>
+</ul>
+<h2 id="stash-changes">Stash changes</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>z</code> <code>z</code> stash changes</li>
+<li>enter stash message and hit <code>ENTER</code></li>
+</ul>
+<h2 id="pop-stash">Pop stash</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>z</code> <code>p</code> pop from stash</li>
+<li>select the stash to pop and hit <code>ENTER</code></li>
+</ul>
+<h2 id="copy-git-commit-sha">Copy git commit SHA</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>l</code> <code>l</code> show log view</li>
+<li>use <code>j</code> and <code>k</code> to position the cursor on a commit</li>
+<li><code>y</code> <code>s</code> copy the git commit SHA</li>
+</ul>
+<h2 id="copy-text-from-a-magit-buffer">Copy text from a Magit buffer</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>\</code> switch to text mode</li>
+<li>copy text using normal vim keystrokes</li>
+<li><code>\</code> switch back to Magit mode</li>
+</ul>
+<h2 id="run-a-shell-command">Run a shell command</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>!</code> <code>s</code> run a shell command</li>
+<li><p>enter a command to run and hit <code>ENTER</code></p></li>
+<li><h2 id="list-all-branches">List all branches</h2></li>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><p><code>y</code> <code>r</code> show refs</p></li>
+</ul>
+<h2 id="jump-to-the-nextprev-section-in-the-status-view">Jump to the next/prev section in the status view</h2>
+<ul>
+<li><code>SPC</code> <code>g</code> <code>s</code> show Magit status view</li>
+<li><code>g</code> <code>j</code> jump to the next section</li>
+<li><code>g</code> <code>k</code> jump to the previous section</li>
+</ul>]]></description>
+    <pubDate>Mon, 09 Mar 2020 00:00:00 UT</pubDate>
+    <guid>http:://matrixwood.netlify.com/posts/2020-03-09-Magit-QuickStart.html</guid>
+    <dc:creator>canftin.com Collaborators</dc:creator>
+</item>
+<item>
+    <title>Quick Clojure Review</title>
+    <link>http:://matrixwood.netlify.com/posts/2020-03-01-quick-clojure-review.html</link>
+    <description><![CDATA[<p><a href="https://clojure.org/">Clojure</a> is a functional, symbiotic, and homoiconic programming language. - Functional: where functions are first-class citizens and mutating state is frowned upon - Symbiotic: the language is intended to be run atop a host. environment - Homoiconic: “code is data” — this helps facilitate a macro system for rewriting the language. <!--more--></p>
+<h1 id="data-structures">Data Structures</h1>
+<p>Clojure provides a language API based upon a select set of data structures. - List: (1 2 3) - Vector: [1 2 3] - Map: {:foo “bar”} - Set: #{1 2 3}</p>
+<h2 id="list">List</h2>
+<p>A list uses parentheses as its surrounding delimiters, and so an empty list would look like (), whereas a list with three elements could look like (“a” “b” “c”).</p>
+<p>Clojure will happily hide those details away from you and provide abstractions that make dealing with data structures in the most appropriate and performant manner very easy.</p>
+<p>By using the <code>cons</code> function, which will insert your value at the beginning of the list.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" title="1">(<span class="kw">cons</span> <span class="dv">4</span> &#39;(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="co">;; (4 1 2 3)</span></a></code></pre></div>
+<p>Or, <code>conj</code> function instead, which will pick the correct method for inserting the new value at the start of the list.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" title="1">(conj &#39;(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>) <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">;; (4 1 2 3)</span></a></code></pre></div>
+<p>But, if your data structure were a vector collection instead, then the conj function would know to insert the value at the end of the collection.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb3-1" title="1">(conj [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>] <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">;; [1 2 3 4]</span></a></code></pre></div>
+<p>There are other abstraction functions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb4-1" title="1">(peek [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>]) <span class="co">;; 3</span></a>
+<a class="sourceLine" id="cb4-2" title="2">(peek &#39;(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>)) <span class="co">;; 1</span></a>
+<a class="sourceLine" id="cb4-3" title="3">(<span class="kw">pop</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>]) <span class="co">;; [1 2]</span></a>
+<a class="sourceLine" id="cb4-4" title="4">(<span class="kw">pop</span> &#39;(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>)) <span class="co">;; (2 3)</span></a></code></pre></div>
+<h2 id="vector">Vector</h2>
+<p>Vectors allow you to have index access to any element within the data structure.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb5-1" title="1">(<span class="kw">get</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="co">;; 4</span></a></code></pre></div>
+<p>You can modify the vector by using the assoc function (which is an abbreviation of “associate”). The way it works is that you provide the index of the vector you want to modify and then provide the value.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb6-1" title="1">(<span class="kw">assoc</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">5</span> <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">;; [1 2 3 4 5 6]</span></a>
+<a class="sourceLine" id="cb6-3" title="3">(<span class="kw">assoc</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>] <span class="dv">0</span> <span class="dv">8</span>)</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">;; [8 2 3 4 5]</span></a></code></pre></div>
+<p>but what if you want to remove a value? One way to do this would be to use the pop function, which returns a copy of the vector but with the last element removed.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb7-1" title="1">(<span class="kw">pop</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>])</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="co">;; [1 2 3 4]</span></a></code></pre></div>
+<h2 id="map">Map</h2>
+<p>The map data structure goes by many different names—hash, hash map, dictionary—and what distinguishes it from other data structures is the underlying implementation, which is a key part of ensuring the algorithmic performance of this particular data structure.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb8-1" title="1">{:my-key <span class="st">&quot;this is my value&quot;</span>}</a>
+<a class="sourceLine" id="cb8-2" title="2">(<span class="kw">get</span> {:my-key <span class="st">&quot;this is my value&quot;</span>} :my-key)</a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">;; &quot;this is my value&quot;</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="co">;; If you want the entire entry</span></a>
+<a class="sourceLine" id="cb8-6" title="6">(<span class="kw">find</span> {:a <span class="dv">1</span> :b <span class="dv">2</span>} :a)</a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="co">;; [:a 1]</span></a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9">(<span class="kw">assoc</span> {:foo <span class="st">&quot;bar&quot;</span>} :baz <span class="st">&quot;qux&quot;</span>)</a>
+<a class="sourceLine" id="cb8-10" title="10"><span class="co">;; {:foo &quot;bar&quot;, :baz &quot;qux&quot;}</span></a>
+<a class="sourceLine" id="cb8-11" title="11"></a>
+<a class="sourceLine" id="cb8-12" title="12">(dissoc {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :baz)</a>
+<a class="sourceLine" id="cb8-13" title="13"><span class="co">;; {:foo &quot;bar&quot;}</span></a>
+<a class="sourceLine" id="cb8-14" title="14"></a>
+<a class="sourceLine" id="cb8-15" title="15">(select-keys {<span class="bu">:name</span> <span class="st">&quot;Mark&quot;</span> :age <span class="dv">33</span> :location <span class="st">&quot;London&quot;</span>} [<span class="bu">:name</span> :location])</a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="co">;; {:name &quot;Mark&quot;, :location &quot;London&quot;}</span></a></code></pre></div>
+<h3 id="keywords">Keywords</h3>
+<p>Some readers may be wondering what the colon prefixing the key is supposed to mean. The colon indicates that the key is actually a keyword.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb9-1" title="1"><span class="co">;; Keyword as a Function</span></a>
+<a class="sourceLine" id="cb9-2" title="2">(<span class="kw">get</span> {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :baz)</a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="co">;; &quot;qux&quot;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">(:baz {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="co">;; &quot;qux&quot;</span></a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="co">;; Demonstrate the contains? Function</span></a>
+<a class="sourceLine" id="cb9-8" title="8">(contains? {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>} :foo)</a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="co">;; true</span></a></code></pre></div>
+<h3 id="keys-values-and-replacement">Keys, Values, and Replacement</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb10-1" title="1"><span class="co">;; Demonstrate the keys and vals Functions</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3">(keys {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="co">;; (:baz :foo)</span></a>
+<a class="sourceLine" id="cb10-5" title="5">(vals {:foo <span class="st">&quot;bar&quot;</span> :baz <span class="st">&quot;qux&quot;</span>})</a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="co">;; (&quot;qux&quot; &quot;bar&quot;)</span></a></code></pre></div>
+<p>The replace function allows you to create a new vector consisting of values extracted from a map data structure.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb11-1" title="1"><span class="co">;; Demonstrate the replace Function</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3">(<span class="kw">replace</span> {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>} [:c :b :a])</a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">;; [3 2 1]</span></a>
+<a class="sourceLine" id="cb11-5" title="5">(<span class="kw">replace</span> [:a :b :c] [<span class="dv">2</span> <span class="dv">1</span> <span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="co">;; [:c :b :a].</span></a></code></pre></div>
+<h2 id="set">Set</h2>
+<p>A set is a data structure made up of unique values. Much like Clojure’s map and vector data structures, it provides Clojure with a very lightweight data model.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb12-1" title="1"><span class="co">;; Simple Set Data Structure Example</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">#{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> :a :b :c}</a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="co">;; #{1 :c 3 2 :b :a}</span></a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="co">;; Filter Out Duplicates</span></a>
+<a class="sourceLine" id="cb12-7" title="7">(<span class="kw">set</span> [<span class="dv">1</span> <span class="dv">1</span> <span class="dv">2</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">6</span>])</a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="co">;; #{1 4 6 3 2 5}</span></a>
+<a class="sourceLine" id="cb12-9" title="9">(<span class="kw">apply</span> sorted-set [<span class="dv">1</span> <span class="dv">1</span> <span class="dv">2</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">6</span>])</a>
+<a class="sourceLine" id="cb12-10" title="10"><span class="co">;; #{1 2 3 4 5 6}</span></a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12"><span class="co">;; Using conj to Add New Value to a Set</span></a>
+<a class="sourceLine" id="cb12-13" title="13">(conj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb12-14" title="14"><span class="co">;; #{1 4 3 2}</span></a>
+<a class="sourceLine" id="cb12-15" title="15">(conj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb12-16" title="16"><span class="co">;; #{1 3 2}</span></a>
+<a class="sourceLine" id="cb12-17" title="17"></a>
+<a class="sourceLine" id="cb12-18" title="18"><span class="co">;; Remove Items from a Set with disj</span></a>
+<a class="sourceLine" id="cb12-19" title="19">(disj #{<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>} <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb12-20" title="20"><span class="co">;; #{1 2}</span></a></code></pre></div>
+<h1 id="functional-programming">Functional Programming</h1>
+<ul>
+<li>Immutability</li>
+<li>Referential transparency</li>
+<li>First-class functions</li>
+<li>Partial application</li>
+<li>Recursive iteration</li>
+<li>Composability</li>
+</ul>
+<h2 id="immutability">Immutability</h2>
+<p>If you have state and it can change, then once your application becomes distributed and concurrent, you’ll end up in a world of hurt, as many different threads can start manipulating your data at non-deterministic times. This can cause your application to fail at any given moment and become very hard to debug and to reason about. By offering immutability, Clojure can help to side-step this problem. In Clojure, every time you manipulate a data structure you are returned not a mutated version of the original, but rather a whole new copy with your change(s) applied. ## Referential transparency Referential transparency is when an expression can be replaced by its value without changing the behavior of a program.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb13-1" title="1"><span class="co">;; Example of a Referentially Transparent Function</span></a>
+<a class="sourceLine" id="cb13-2" title="2">(defn sum [x y]</a>
+<a class="sourceLine" id="cb13-3" title="3"> (<span class="op">+</span> x y))</a>
+<a class="sourceLine" id="cb13-4" title="4">(sum <span class="dv">1</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="co">;; 2</span></a></code></pre></div>
+<p>The function sum (shown in Listing 3-1) is referentially transparent. No matter what happens, if I provide the same set of arguments (in this case 1 and 1), I’ll always get back the same result. ## First-class Functions For a language to offer “first-class functions,” it needs to be able to both store functions and pass functions around as if they were values. We’ve already seen the former being achieved using variables, and the latter (passing functions around as values) is also possible within Clojure. - complement - apply - map - reduce - filter - comp</p>
+<h3 id="complement">complement</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb14-1" title="1"><span class="co">;; Example of the complement function returning the opposite truth value</span></a>
+<a class="sourceLine" id="cb14-2" title="2">((<span class="kw">complement</span> empty?) <span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="co">;; false</span></a></code></pre></div>
+<h3 id="apply">apply</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb15-1" title="1">(<span class="kw">apply</span> str [<span class="st">&quot;a&quot;</span> <span class="st">&quot;b&quot;</span> <span class="st">&quot;c&quot;</span>])</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="co">;; &quot;abc&quot;</span></a></code></pre></div>
+<h3 id="map-1">map</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb16-1" title="1"><span class="co">;; Example of map</span></a>
+<a class="sourceLine" id="cb16-2" title="2">(<span class="kw">map</span> inc [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>])</a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="co">;; (2 3 4)</span></a>
+<a class="sourceLine" id="cb16-4" title="4"></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="co">;; The map Return Value Type Is a List</span></a>
+<a class="sourceLine" id="cb16-6" title="6">(<span class="kw">map</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  (fn [[k v]] (inc v))</a>
+<a class="sourceLine" id="cb16-8" title="8">  {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>}) <span class="co">;; =&gt; (4 3 2)</span></a>
+<a class="sourceLine" id="cb16-9" title="9"><span class="co">;; (2 3 4)</span></a>
+<a class="sourceLine" id="cb16-10" title="10"></a>
+<a class="sourceLine" id="cb16-11" title="11"><span class="co">;; Ensure map Returns Key/Value-like Data Structure</span></a>
+<a class="sourceLine" id="cb16-12" title="12">(<span class="kw">map</span></a>
+<a class="sourceLine" id="cb16-13" title="13">  (fn [[k v]] [k (inc v)])</a>
+<a class="sourceLine" id="cb16-14" title="14">  {:a <span class="dv">1</span> :b <span class="dv">2</span> :c <span class="dv">3</span>})</a>
+<a class="sourceLine" id="cb16-15" title="15"><span class="co">;; ([:c 4] [:b 3] [:a 2])</span></a></code></pre></div>
+<h3 id="reduce">reduce</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb17-1" title="1"><span class="co">;; Example of the reduce Function</span></a>
+<a class="sourceLine" id="cb17-2" title="2">(<span class="kw">reduce</span> <span class="op">+</span> [<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span>])</a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">;; 10</span></a></code></pre></div>
+<h3 id="filter">filter</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb18-1" title="1"><span class="co">;; Example of the filter Function</span></a>
+<a class="sourceLine" id="cb18-2" title="2">(filter even? (range <span class="dv">10</span>))</a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="co">;; (0 2 4 6 8)</span></a></code></pre></div>
+<h3 id="comp">comp</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb19-1" title="1"><span class="co">;; Example of the comp Function</span></a>
+<a class="sourceLine" id="cb19-2" title="2">((comp clojure.string/upper-case (partial <span class="kw">apply</span> str) <span class="kw">reverse</span>) <span class="st">&quot;hello&quot;</span>)</a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="co">;; &quot;OLLEH&quot;</span></a></code></pre></div>
+<h2 id="partial-application">Partial application</h2>
+<p>Partial application helps to promote the creation of functions that can expand their use cases beyond their initial intent. The concept of partial application is regularly confused with another functional concept known as currying (which Clojure doesn’t support). When you “curry” a function, the function’s arguments are expanded internally into separate functions. A curried function won’t execute its body until all arguments have been provided (similar to partial application). So, again, if your function accepted three arguments you could effectively call your curried function in one of the following ways.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="co">// Internal Representation of a Curry-Compiled Output</span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="kw">function</span> <span class="at">f</span>(a) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="kw">function</span> (b) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-4" title="4">        <span class="kw">function</span> (c) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-5" title="5">            <span class="cf">return</span> a <span class="op">+</span> b <span class="op">+</span> c<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb20-9" title="9"><span class="at">foo</span>(<span class="st">&#39;x&#39;</span>)(<span class="st">&#39;y&#39;</span>)(<span class="st">&#39;z&#39;</span>) <span class="co">// &#39;xyz&#39;</span></a></code></pre></div>
+<p>So, just to recap, the main differences between currying and partial application are as follows. 1. You only partially apply your values once. So, if your function takes three arguments and you partially apply two of them, then when your resulting function is called you only provide one argument. If you had instead partially applied only one argument, you would still only call the resulting function once (but this time you would have to provide the remaining two arguments). 2. If we consider the “API” scenario from earlier, you are providing the initial values for the partially applied function, whereas with a curried function it is the user who provides the arguments.</p>
+<h2 id="recursive-iteration">Recursive Iteration</h2>
+<p>The classic for loop you’re likely familiar with <code>for (i = 0; i &lt; 10; i++) {}</code> by design allows mutating local variables to increment the loop. In Clojure, local variables are immutable, and so for us to loop we need to use recursive function calls instead. Instead of looping, you’ll typically need to use the <code>loop/recur</code> special form, although a lot of the time other iterator-style functions such as map, reduce, and filter will be better fitted to solving the problem at hand. The main benefit of the <code>loop/recur</code> special form is that it allows you to safely apply recursive function calls without exhausting your memory stack. For example, if you’ve ever written any JavaScript code in your life you’ll likely have hit a problem at least once where you’ve exhausted the stack and caused a “stack overflow” error.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb21-1" title="1"><span class="co">;; Example of Stack Exhaustion</span></a>
+<a class="sourceLine" id="cb21-2" title="2">(defn count-down [x]</a>
+<a class="sourceLine" id="cb21-3" title="3">  (<span class="kw">if</span> (<span class="op">=</span> x <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb21-4" title="4">    (prn <span class="st">&quot;finished&quot;</span>)</a>
+<a class="sourceLine" id="cb21-5" title="5">    (count-down (<span class="kw">do</span> (prn x) (dec x)))))</a>
+<a class="sourceLine" id="cb21-6" title="6">(count-down <span class="dv">10</span>) <span class="co">;; works exactly as previous example BUT it&#39;s not safe!</span></a>
+<a class="sourceLine" id="cb21-7" title="7">(count-down <span class="dv">100000</span>) <span class="co">;; will cause a &quot;StackOverflowError&quot;</span></a></code></pre></div>
+<p>Resolving the problem with the code will require a process that the else statement need to be modified so that instead of returning a function call to count-down you return a function.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb22-1" title="1"><span class="co">;; Example of trampoline Function</span></a>
+<a class="sourceLine" id="cb22-2" title="2">(defn count-down [x]</a>
+<a class="sourceLine" id="cb22-3" title="3">  (<span class="kw">if</span> (<span class="op">=</span> x <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb22-4" title="4">    (prn <span class="st">&quot;finished&quot;</span>)</a>
+<a class="sourceLine" id="cb22-5" title="5">    #(count-down (<span class="kw">do</span> (prn x) (dec x)))))</a>
+<a class="sourceLine" id="cb22-6" title="6">(trampoline count-down <span class="dv">10</span>) <span class="co">; works fine still</span></a>
+<a class="sourceLine" id="cb22-7" title="7">(trampoline count-down <span class="dv">100000</span>) <span class="co">; no longer triggers an error</span></a></code></pre></div>
+<p>Remember: #(…) is a shorthand syntax for an anonymous function. ## Composability The main reason this is such a key aspect of functional programming is that your units of functionality should be generic enough to be reused within many different contexts, rather than being overly specific to one environment and ultimately not being reusable.</p>]]></description>
+    <pubDate>Sun, 01 Mar 2020 00:00:00 UT</pubDate>
+    <guid>http:://matrixwood.netlify.com/posts/2020-03-01-quick-clojure-review.html</guid>
+    <dc:creator>canftin.com Collaborators</dc:creator>
+</item>
+<item>
+    <title>Free Monads Are Simple</title>
+    <link>http:://matrixwood.netlify.com/posts/2015-04-13-free-monads-are-simple.html</link>
+    <description><![CDATA[<p>I recently gave <a href="/downloads/advanced-scala-2015-free-monads.pdf">a talk</a> at the <a href="http://www.meetup.com/london-scala/events/220942615/">Advanced Scala meetup</a> in London on free monads. Despite the name of the group, I think that free monads are eminently simple as well as being extremely useful. Let me explain.</p>
+<!--more-->
+<p>The free monad brings together two concepts, monads and interpreters, allowing the creation of composable monadic interpreters. That’s a bunch of big words, but why should we care? Because it allows simple solutions to difficult problems.</p>
+<p>Take the example of Facebook’s <a href="https://github.com/facebook/Haxl">Haxl</a> and Twitter’s <a href="https://www.youtube.com/watch?v=VVpmMfT8aYw">Stitch</a>. Both systems solve a problem faced by companies that have aggressively adopted a service oriented architecture:<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> service orchestration.</p>
+<p>Consider rendering a user’s Twitter stream. Hypothetically, the process might first retrieve the list of recent tweets from one service. Then for each tweet it might fetch the tweeter’s name and picture to go alongside the tweet, which could require a request to two more services. No doubt there are logging and analytics services that would also be involved. All told a great number of services and requests can be involved in answering what is a single request from the UI perspective. With this explosion of requests there are a number of problems: increased network traffic, increased latency (which goes hand-in-hand with traffic), and consistency. The last point deserves some explanation. Imagine two tweets by the same person are in the stream. That person could change their details inbetween fetching the name and photo for the first and second tweet. If we allow this inconsistency to occur it makes for a very poor user experience, as the user can’t tell at a glance that the two tweets are by the same person. It’s fairly clear that we could avoid this inconsistency <em>and</em> solve our network traffic and latency issues if we just cached data. We could implement this by writing special-purpose request aggregation and caching for each request type, which is quickly going to be a losing battle as APIs and interfaces evolve. Or we could write a general purpose tool that allows us to describe the data we need and takes care of the optimisation for us. The free monad allows us to easily do this. Sold? Ok, let’s get back to describing the free monad.</p>
+<h2 id="monads">Monads</h2>
+<p>Remember I said the free monad brings together monads and interpreters. Let’s start with the monad part. I’m going to assume you understand monads already. If not, don’t worry. They’re just like cats or burritos or something.</p>
+<p>Now recall that a monad is defined by two operations<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, <code>point</code> and <code>flatMap</code>, with signatures</p>
+<ul>
+<li><code>point[M[_], A](a: A): M[A]</code>; and</li>
+<li><code>flatMap[M[_], A, B](fa: F[A])(f: A =&gt; F[B]): F[B]</code>.</li>
+</ul>
+<p><code>Point</code> is not very interesting — it just wraps a monad around a value. <code>FlatMap</code> is, however, the distinguishing feature of a monad and it tells us something very important: <em>monads are fundamentally about control flow</em>. The signature of <code>flatMap</code> says you combine a <code>F[A]</code> and a function <code>A =&gt; F[B]</code> to create a <code>F[B]</code>. The only way to do this is to get the <code>A</code> out of the <code>F[A]</code> and apply it to the <code>A =&gt; F[B]</code> function. There is a clear ordering of operations here, and repeated applications of <code>flatMap</code> creates a sequence of operations that must execute from left to right. So we see that monads explicitly encode control flow.</p>
+<p>Related to this, the continuation monad can be used to <a href="http://blog.sigfpe.com/2008/12/mother-of-all-monads.html">encode any other monad</a>. What is a <a href="http://en.wikipedia.org/wiki/Continuation">continuation</a>? It’s a universal control flow primitive. <em>Any</em> control flow can be expressed using continuations.</p>
+<p>We usually use monads to glue together pure functions with special purpose control-flow, such as fail fast error handling (using <code>\/</code> or <code>Either</code>) or asynchronous computation (using <code>Future</code>). The free monad allows us to abstractly specify control flow between pure functions, and separately define an implementation.</p>
+<h2 id="interpreters">Interpreters</h2>
+<p>Ok, so that’s monads: control flow. What about interpreters. Interpreters are about separating the representation of a computation from the way it is run. Any interpreter has two parts<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>:</p>
+<ol type="1">
+<li>an <em>abstract syntax tree</em> (AST) that represents the computation; and</li>
+<li>a process that gives meaning to the abstract syntax tree. That is, the bit that actually runs it.</li>
+</ol>
+<p>A simple example is in order. Consider the expression <code>1 + 2 + 3</code>. We can execute this directly, evaluating to <code>6</code>, or we could represent it as an abstract syntax tree such as <code>Add(1, Add(2, 3))</code>. Given the AST we could choose from many different ways to interpret it:</p>
+<ul>
+<li>We could represent results using <code>Ints</code>, <code>Doubles</code>, or arbitrary precision numbers.</li>
+<li>We could perform our calculations using <a href="http://en.wikipedia.org/wiki/Dual_number">dual numbers</a>, calculating the derivative at the same time (very useful for machine learning applications).</li>
+<li>We could transform our calculation to run on the processor’s vector unit, or on a GPU.</li>
+</ul>
+<p>Hopefully this gives you a feel for the structure and power of the interpreter pattern.</p>
+<h2 id="free-monads">Free Monads</h2>
+<p>We have talked about monads and interpreters. I said the free monad is just the combination of the two. Concretely this means the free monad provides:</p>
+<ul>
+<li>an AST to express monadic operations;</li>
+<li>an API to write interpreters that give meaning to this AST.</li>
+</ul>
+<p>What does the AST look like? It simply represents the monad operations without giving meaning to them. The usual representation of the free monad represents the monadic operations in terms of <code>point</code> along with <code>join</code>, instead of the more familiar <code>flatMap</code>, but the point is still the same. An example encoding is</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">sealed</span> <span class="kw">trait</span> Free[F[_], A]</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Return[F[_], A](a: A) <span class="kw">extends</span> Free[F, A]</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Suspend[F[_], A](s: F[Free[F, A]]) <span class="kw">extends</span> Free[F, A]</a></code></pre></div>
+<p>Now what does a free monad interpreter look like? It’s just a function from <code>F[_]</code>, the representation inside the free monad, to <code>G[_]</code> some monad in which we really run the computation (the <code>Id</code> monad is a popular choice). This type of function has a special name, a [natural computation][natural-computation].</p>
+<p>Here’s a simple example.</p>
+<p>First we define an algebraic data type to represent the actions we’re going to store in our monad.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">import</span> scalaz.{Free, ~&gt;, Id, Functor}</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">sealed</span> <span class="kw">trait</span> Log[A]</a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Debug[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Warn[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">final</span> <span class="kw">case</span> <span class="kw">class</span> Error[A](msg: String, value: A) <span class="kw">extends</span> Log[A]</a></code></pre></div>
+<p>For technical reasons we need to have a <code>Functor</code> instance.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">object</span> Log {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">implicit</span> <span class="kw">val</span> logFunctor: Functor[Log] = <span class="kw">new</span> Functor[Log] {</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">def</span> map[A, B](fa: Log[A])(f: A =&gt; B): Log[B] =</a>
+<a class="sourceLine" id="cb3-4" title="4">      fa <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="kw">case</span> <span class="fu">Debug</span>(msg, value) =&gt; <span class="fu">Debug</span>(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-6" title="6">        <span class="kw">case</span> <span class="fu">Warn</span>(msg, value) =&gt; <span class="fu">Warn</span>(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="kw">case</span> Error(msg, value) =&gt; Error(msg, <span class="fu">f</span>(value))</a>
+<a class="sourceLine" id="cb3-8" title="8">      }</a>
+<a class="sourceLine" id="cb3-9" title="9">  }</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="co">// Smart constructors</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="kw">def</span> debug[A](msg: String, value: A): Log[A] = <span class="fu">Debug</span>(msg, value)</a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="kw">def</span> warn[A](msg: String, value: A): Log[A] = <span class="fu">Warn</span>(msg, value)</a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">def</span> error[A](msg: String, value: A): Log[A] = Error(msg, value)</a>
+<a class="sourceLine" id="cb3-15" title="15">}</a></code></pre></div>
+<p>Now we define an interpreter for <code>Log</code>. This interpreter just prints to the console. You can imagine more elaborate interpreters that, say, output logs to Kafka or other infrastructure. The interpreter is just simple structural recursion on <code>Log</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">object</span> Println <span class="kw">extends</span> (Log ~&gt; Id.<span class="fu">Id</span>) {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">import</span> Id._</a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">import</span> scalaz.<span class="fu">syntax</span>.<span class="fu">monad</span>._</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">def</span> apply[A](in: Log[A]): Id[A] =</a>
+<a class="sourceLine" id="cb4-6" title="6">    in <span class="kw">match</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">      <span class="kw">case</span> <span class="fu">Debug</span>(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-8" title="8">        <span class="fu">println</span>(s<span class="st">&quot;DEBUG: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-9" title="9">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11">      <span class="kw">case</span> <span class="fu">Warn</span>(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-12" title="12">        <span class="fu">println</span>(s<span class="st">&quot;WARN: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-13" title="13">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-14" title="14"></a>
+<a class="sourceLine" id="cb4-15" title="15">      <span class="kw">case</span> Error(msg, value) =&gt;</a>
+<a class="sourceLine" id="cb4-16" title="16">        <span class="fu">println</span>(s<span class="st">&quot;ERROR: $msg&quot;</span>)</a>
+<a class="sourceLine" id="cb4-17" title="17">        value.<span class="fu">point</span>[Id]</a>
+<a class="sourceLine" id="cb4-18" title="18">    }</a>
+<a class="sourceLine" id="cb4-19" title="19">}</a></code></pre></div>
+<p>Finally here’s an example of definition and use.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scala"><code class="sourceCode scala"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">object</span> Example {</a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">val</span> free =</a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="kw">for</span> {</a>
+<a class="sourceLine" id="cb5-4" title="4">      x &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">debug</span>(<span class="st">&quot;Step 1&quot;</span>, <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb5-5" title="5">      y &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">warn</span>(<span class="st">&quot;Step 2&quot;</span>, <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb5-6" title="6">      z &lt;- Free.<span class="fu">liftF</span>(Log.<span class="fu">error</span>(<span class="st">&quot;Step 3&quot;</span>, <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb5-7" title="7">    } <span class="kw">yield</span> x + y + z</a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">val</span> result =</a>
+<a class="sourceLine" id="cb5-10" title="10">    free.<span class="fu">foldMap</span>(Println)</a>
+<a class="sourceLine" id="cb5-11" title="11">}</a></code></pre></div>
+<h2 id="conclusions">Conclusions</h2>
+<p>That’s the basics of the free monad: it’s something we can wrap around an arbitrary type constructor (a <code>F[_]</code>) to construct a monad. It allows us to separate the structure of the computation from its interpreter, thereby allowing different interpretation depending on context.</p>
+<p>There are a lot of conveniences for using the free monad. We can use something called the Coyoneda theorem to automatically convert a type constructor into a functor that the free monad requires. We can compose different types wrapped in the free monad, and different interpreters, using coproducts. This is all useful stuff but not essential for understanding the core idea.</p>
+<p>The core idea, separating the structure and interpretation of computer programs, is incredibly powerful (wizardly, even). Haxl and Stitch are just one prominent example of this.</p>
+<p>If you are interested in learning more about these ideas, we are writing a book <a href="http://underscore.io/training/courses/advanced-scala-scalaz">Essential Interpreters</a> that covers the basics of interpreters up to the free monad.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Etsy, for example, faces the same problem but [their solution][https://codeascraft.com/2015/04/06/experimenting-with-hhvm-at-etsy/] is rather less elegant and performant.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>And the monad laws.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>Some very simple interpreters entwine these two parts, but they are conceptually if not literally separate.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+</ol>
+</section>]]></description>
+    <pubDate>Mon, 13 Apr 2015 00:00:00 UT</pubDate>
+    <guid>http:://matrixwood.netlify.com/posts/2015-04-13-free-monads-are-simple.html</guid>
+    <dc:creator>canftin.com Collaborators</dc:creator>
+</item>
+
+    </channel>
+</rss>

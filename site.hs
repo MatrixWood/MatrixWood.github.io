@@ -11,6 +11,14 @@ siteHost = "http:://matrixwood.netlify.com"
 siteName :: String
 siteName = "matrixwood"
 
+feedConfiguration :: FeedConfiguration
+feedConfiguration = FeedConfiguration
+    { feedTitle = siteName
+    , feedDescription = "RSS feed for matrixwood.netlify.com."
+    , feedAuthorName = "canftin.com Collaborators"
+    , feedAuthorEmail = "wwc7033@gmail.com"
+    , feedRoot = "http:://matrixwood.netlify.com"
+    }
 --------------------------------------------------------------------------------
 main :: IO ()
 main = hakyll $ do
@@ -58,6 +66,15 @@ main = hakyll $ do
                 >>= loadAndApplyTemplate "templates/default.html" writingCtx
                 >>= relativizeUrls
 
+    create ["rss.xml"] $ do
+        route idRoute
+        compile $ do
+            let feedCtx = postCtx `mappend` bodyField "description"
+            posts <- fmap (take 10) . recentFirst =<<
+              loadAllSnapshots "posts/*" "content"
+            renderRss feedConfiguration feedCtx posts
+              >>= cleanIndexHtmls
+
     match "index.html" $ do
         route idRoute
         compile $ do
@@ -84,3 +101,8 @@ postCtx =
     teaserField "teaser" "content" <>
     defaultContext
 
+cleanIndexHtmls :: Item String -> Compiler (Item String)
+cleanIndexHtmls = return . fmap (replaceAll pattern replacement)
+  where
+    pattern = "/index.html"
+    replacement = const "/"
